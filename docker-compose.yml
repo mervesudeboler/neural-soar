@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: neural-soar-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - neural-soar-network
+
+  neural-soar-trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neural-soar-trainer
+    command: python scripts/train_agent.py --episodes 10 --timesteps 100000
+    volumes:
+      - ./brain/models:/app/brain/models
+      - ./logs:/app/logs
+      - ./data:/app/data
+    environment:
+      - NEURAL_SOAR_MODE=training
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - neural-soar-network
+
+  neural-soar-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neural-soar-agent
+    command: python scripts/run_simulation.py --mode simulate --episodes 5
+    volumes:
+      - ./brain/models:/app/brain/models
+      - ./logs:/app/logs
+      - ./data:/app/data
+    environment:
+      - NEURAL_SOAR_MODE=inference
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - neural-soar-network
+
+  neural-soar-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neural-soar-dashboard
+    command: python scripts/run_simulation.py --mode dashboard
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./brain/models:/app/brain/models
+      - ./logs:/app/logs
+      - ./data:/app/data
+    environment:
+      - NEURAL_SOAR_MODE=dashboard
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - neural-soar-network
+
+volumes:
+  redis_data:
+
+networks:
+  neural-soar-network:
+    driver: bridge
