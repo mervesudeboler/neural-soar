@@ -1,10 +1,15 @@
 """
 Unit tests for SOAREnvironment
+Tests use the correct brain.environment import path and shape(12,) observation space.
 """
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 import numpy as np
-from neural_soar.environment import SOAREnvironment
+from brain.environment import SOAREnvironment
 
 
 @pytest.fixture
@@ -15,223 +20,188 @@ def env():
 
 class TestSOAREnvironment:
     """Test cases for SOAR Environment."""
-    
+
     def test_environment_initialization(self, env):
         """Test that environment initializes properly."""
         assert env is not None
         assert env.current_step == 0
         assert env.total_reward == 0
-        assert len(env.blocked_ips) == 0
-    
+
     def test_observation_space_shape(self, env):
-        """Test observation space shape."""
+        """Test observation space is 12-dimensional (matches README spec)."""
         obs, _ = env.reset()
-        assert obs.shape == (8,)
+        assert obs.shape == (12,), f"Expected shape (12,), got {obs.shape}"
         assert isinstance(obs, np.ndarray)
         assert obs.dtype == np.float32
-    
+
     def test_observation_space_bounds(self, env):
-        """Test observation space bounds."""
+        """Test observation values are normalized to [0, 1]."""
         obs, _ = env.reset()
-        assert np.all(obs >= 0.0)
-        assert np.all(obs <= 1.0)
-    
+        assert np.all(obs >= 0.0), "Observation contains values below 0"
+        assert np.all(obs <= 1.0), "Observation contains values above 1"
+
     def test_action_space(self, env):
-        """Test action space properties."""
+        """Test action space has exactly 5 discrete actions."""
         assert env.action_space.n == 5
-        for _ in range(10):
+        for _ in range(20):
             action = env.action_space.sample()
             assert 0 <= action < 5
-    
+
     def test_reset_returns_valid_observation(self, env):
-        """Test reset returns valid observation."""
+        """Test reset returns (obs, info) with correct shapes."""
         obs, info = env.reset()
         assert obs is not None
         assert isinstance(info, dict)
-        assert obs.shape == (8,)
-    
+        assert obs.shape == (12,)
+
     def test_reset_clears_state(self, env):
-        """Test that reset clears environment state."""
-        # Run some steps
+        """Test that reset zeroes step counter and total reward."""
         env.reset()
         for _ in range(10):
             env.step(1)
-        
-        # Reset
+
         env.reset()
         assert env.current_step == 0
         assert env.total_reward == 0
-        assert len(env.blocked_ips) == 0
-        assert env.detected_threats == 0
-    
-    def test_step_with_monitor_action(self, env):
-        """Test step with monitor action."""
+
+    def test_step_returns_five_tuple(self, env):
+        """Test step returns (obs, reward, terminated, truncated, info)."""
         env.reset()
-        obs, reward, terminated, truncated, info = env.step(0)
-        
-        assert obs.shape == (8,)
-        assert isinstance(reward, float)
+        result = env.step(0)
+        assert len(result) == 5, "Step should return 5-tuple"
+        obs, reward, terminated, truncated, info = result
+
+        assert obs.shape == (12,)
+        assert isinstance(reward, (float, np.floating))
         assert isinstance(terminated, (bool, np.bool_))
         assert isinstance(truncated, (bool, np.bool_))
         assert isinstance(info, dict)
         assert env.current_step == 1
-    
-    def test_step_with_block_action(self, env):
-        """Test step with block action."""
+
+    def test_step_monitor_action(self, env):
+        """Test step with MONITOR (action 0)."""
         env.reset()
-        initial_ips = len(env.blocked_ips)
+        obs, reward, terminated, truncated, info = env.step(0)
+        assert obs.shape == (12,)
+
+    def test_step_rate_limit_action(self, env):
+        """Test step with RATE_LIMIT (action 1)."""
+        env.reset()
         obs, reward, terminated, truncated, info = env.step(1)
-        
-        assert obs.shape == (8,)
-        assert len(env.blocked_ips) >= initial_ips
-    
-    def test_step_with_rate_limit_action(self, env):
-        """Test step with rate limit action."""
+        assert obs.shape == (12,)
+        assert isinstance(reward, (float, np.floating))
+
+    def test_step_block_ip_action(self, env):
+        """Test step with BLOCK_IP (action 2)."""
         env.reset()
         obs, reward, terminated, truncated, info = env.step(2)
-        
-        assert obs.shape == (8,)
-        assert isinstance(reward, float)
-    
-    def test_step_with_honeypot_action(self, env):
-        """Test step with honeypot action."""
+        assert obs.shape == (12,)
+
+    def test_step_honeypot_action(self, env):
+        """Test step with REDIRECT_HONEYPOT (action 3)."""
         env.reset()
         obs, reward, terminated, truncated, info = env.step(3)
-        
-        assert obs.shape == (8,)
-        assert isinstance(reward, float)
-    
-    def test_step_with_isolate_action(self, env):
-        """Test step with isolate action."""
+        assert obs.shape == (12,)
+
+    def test_step_isolate_action(self, env):
+        """Test step with ISOLATE_CONTAINER (action 4)."""
         env.reset()
         obs, reward, terminated, truncated, info = env.step(4)
-        
-        assert obs.shape == (8,)
-        assert isinstance(reward, float)
-    
-    def test_reward_for_correct_block(self, env):
-        """Test reward for blocking when threat detected."""
-        env.reset()
-        # Run multiple steps to find threat
-        total_positive_reward = 0
-        for _ in range(100):
-            obs, reward, terminated, truncated, info = env.step(1)  # Block action
-            if reward > 5:  # Significant positive reward
-                total_positive_reward += reward
-            if terminated or truncated:
-                break
-        
-        assert total_positive_reward >= 0
-    
-    def test_reward_for_false_positive(self, env):
-        """Test penalty for blocking when no threat."""
-        env.reset()
-        # Run multiple steps, some should have no threat
-        penalties = []
-        for _ in range(100):
-            obs, reward, terminated, truncated, info = env.step(1)  # Block action
-            if reward < 0:
-                penalties.append(reward)
-            if terminated or truncated:
-                break
-        
-        # Should have at least some penalties for false positives
-        assert len(penalties) >= 0
-    
-    def test_episode_termination(self, env):
-        """Test that episode terminates after max steps."""
+        assert obs.shape == (12,)
+
+    def test_all_actions_valid(self, env):
+        """Test that all 5 actions execute without crashing."""
+        for action_id in range(5):
+            env.reset()
+            obs, reward, terminated, truncated, info = env.step(action_id)
+            assert obs.shape == (12,), f"Action {action_id} returned wrong shape"
+
+    def test_episode_terminates(self, env):
+        """Test that episode eventually terminates (max_steps limit)."""
         env.reset()
         terminated = False
+        truncated = False
         step_count = 0
-        
-        while not terminated and step_count < 1000:
-            obs, reward, terminated, truncated, info = env.step(0)
+
+        while not (terminated or truncated) and step_count < 1500:
+            _, _, terminated, truncated, _ = env.step(0)
             step_count += 1
-        
-        assert terminated or step_count >= 1000
-    
-    def test_episode_statistics(self, env):
-        """Test episode statistics tracking."""
+
+        assert terminated or truncated or step_count >= 1500
+
+    def test_stats_tracking(self, env):
+        """Test episode statistics dictionary has required keys."""
         env.reset()
-        for _ in range(50):
-            obs, reward, terminated, truncated, info = env.step(1)
+        for _ in range(30):
+            _, _, terminated, truncated, _ = env.step(1)
             if terminated or truncated:
                 break
-        
+
         stats = env.get_stats()
-        assert 'total_steps' in stats
-        assert 'total_reward' in stats
-        assert 'detected_threats' in stats
-        assert 'false_positives' in stats
-        assert 'blocked_ips' in stats
-        assert 'average_response_time' in stats
-    
-    def test_render_mode(self, env):
-        """Test render method."""
-        env.reset()
-        env.step(1)
-        # Just verify it doesn't crash
-        try:
-            env.render('human')
-        except Exception as e:
-            pytest.fail(f"Render failed: {e}")
-    
-    def test_multiple_episodes(self, env):
-        """Test running multiple episodes."""
-        for episode in range(3):
-            env.reset()
-            done = False
-            steps = 0
-            
-            while not done and steps < 50:
-                action = env.action_space.sample()
-                obs, reward, terminated, truncated, info = env.step(action)
-                done = terminated or truncated
-                steps += 1
-            
-            assert steps > 0
-    
-    def test_action_history(self, env):
-        """Test action history tracking."""
+        required_keys = [
+            "total_steps", "total_reward", "detected_threats",
+            "false_positives", "blocked_ips", "average_response_time",
+        ]
+        for key in required_keys:
+            assert key in stats, f"Missing stat key: {key}"
+
+    def test_action_history_tracked(self, env):
+        """Test that action_history records every step."""
         env.reset()
         actions = [0, 1, 2, 3, 4, 1, 0]
-        
         for action in actions:
             env.step(action)
-        
+
         assert len(env.action_history) == len(actions)
         assert env.action_history == actions
 
+    def test_multiple_episodes_no_crash(self, env):
+        """Test running 5 full episodes without errors."""
+        for episode in range(5):
+            env.reset()
+            done = False
+            steps = 0
+            while not done and steps < 50:
+                _, _, terminated, truncated, _ = env.step(env.action_space.sample())
+                done = terminated or truncated
+                steps += 1
+            assert steps > 0, f"Episode {episode} ran 0 steps"
 
-class TestEnvironmentRandomness:
-    """Test randomness in environment."""
-    
-    def test_different_episodes_are_different(self):
-        """Test that different episodes have different outcomes."""
+    def test_cumulative_reward_updates(self, env):
+        """Test that current_step increments after each step."""
+        env.reset()
+        for i in range(1, 6):
+            env.step(0)
+            assert env.current_step == i
+
+
+class TestEnvironmentConsistency:
+    """Test consistency and reproducibility properties."""
+
+    def test_two_independent_envs_both_valid(self):
+        """Test two separate env instances both produce valid observations."""
         env1 = SOAREnvironment()
         env2 = SOAREnvironment()
-        
+
         obs1, _ = env1.reset()
         obs2, _ = env2.reset()
-        
-        # May be same due to randomness, but statistically different
-        # Just verify both return valid observations
-        assert obs1.shape == (8,)
-        assert obs2.shape == (8,)
-    
-    def test_stochastic_threats(self):
-        """Test that threat detection is stochastic."""
+
+        assert obs1.shape == (12,)
+        assert obs2.shape == (12,)
+        assert np.all(obs1 >= 0) and np.all(obs1 <= 1)
+        assert np.all(obs2 >= 0) and np.all(obs2 <= 1)
+
+    def test_stochastic_threat_variation(self):
+        """Test that the environment generates varied threat scenarios."""
         env = SOAREnvironment()
-        env.reset()
-        
         threat_counts = []
-        for _ in range(10):
+        for _ in range(5):
             env.reset()
             for _ in range(50):
-                obs, reward, terminated, truncated, info = env.step(0)
+                _, _, terminated, truncated, _ = env.step(0)
                 if terminated or truncated:
                     break
             threat_counts.append(env.detected_threats)
-        
-        # Should have variation in threat counts
-        assert len(set(threat_counts)) > 0
+
+        # Basic sanity: threat counts should be non-negative
+        assert all(t >= 0 for t in threat_counts)

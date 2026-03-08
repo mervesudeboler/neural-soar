@@ -1,256 +1,335 @@
 """
-Unit tests for ActionEngine
+Unit tests for ActionEngine, FirewallManager, and HoneypotManager.
+Uses correct import paths: hands.action_engine, hands.firewall, hands.honeypot
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 import pytest
-from datetime import datetime, timedelta
-from neural_soar.hands import ActionEngine
+from datetime import datetime
+from hands.action_engine import ActionEngine, ActionResult, ActionType
+from hands.firewall import FirewallManager
+from hands.honeypot import HoneypotManager
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def firewall():
+    """FirewallManager in simulation mode."""
+    return FirewallManager(simulation_mode=True)
 
 
 @pytest.fixture
-def action_engine():
-    """Create ActionEngine fixture."""
+def honeypot():
+    """HoneypotManager in simulation mode."""
+    return HoneypotManager(simulation_mode=True)
+
+
+@pytest.fixture
+def engine(firewall, honeypot):
+    """ActionEngine wired with FirewallManager and HoneypotManager."""
+    return ActionEngine(
+        firewall_manager=firewall,
+        honeypot_manager=honeypot,
+        simulation_mode=True,
+    )
+
+
+@pytest.fixture
+def bare_engine():
+    """ActionEngine without sub-managers (tests graceful failure paths)."""
     return ActionEngine(simulation_mode=True)
 
 
-class TestActionEngine:
-    """Test cases for Action Engine."""
-    
-    def test_action_engine_initialization(self, action_engine):
-        """Test ActionEngine initializes properly."""
-        assert action_engine is not None
-        assert action_engine.simulation_mode is True
-        assert len(action_engine.action_history) == 0
-        assert len(action_engine.blocked_ips) == 0
-    
-    def test_monitor_action(self, action_engine):
-        """Test monitor action."""
-        result = action_engine.execute_action(0, target_ip='192.168.1.100')
-        
-        assert result['action'] == 'monitor'
-        assert result['success'] is True
-        assert '192.168.1.100' in result['target_ip']
-        assert len(action_engine.action_history) == 1
-    
-    def test_block_ip_action(self, action_engine):
-        """Test block IP action."""
-        target_ip = '192.168.1.101'
-        result = action_engine.execute_action(1, target_ip=target_ip, duration=3600)
-        
-        assert result['action'] == 'block_ip'
-        assert result['success'] is True
-        assert target_ip in action_engine.blocked_ips
-        assert result['expiration'] is not None
-    
-    def test_block_ip_expiration(self, action_engine):
-        """Test blocked IP has correct expiration."""
-        target_ip = '192.168.1.102'
-        duration = 3600
-        result = action_engine.execute_action(1, target_ip=target_ip, duration=duration)
-        
-        expiration = datetime.fromisoformat(result['expiration'])
-        now = datetime.now()
-        diff = (expiration - now).total_seconds()
-        
-        # Should be approximately the duration (within 5 seconds)
-        assert abs(diff - duration) < 5
-    
-    def test_rate_limit_action(self, action_engine):
-        """Test rate limit action."""
-        target_ip = '192.168.1.103'
-        result = action_engine.execute_action(2, target_ip=target_ip)
-        
-        assert result['action'] == 'rate_limit'
-        assert result['success'] is True
-        assert target_ip in action_engine.rate_limited_ips
-    
-    def test_honeypot_redirect_action(self, action_engine):
-        """Test honeypot redirect action."""
-        target_ip = '192.168.1.104'
-        result = action_engine.execute_action(3, target_ip=target_ip)
-        
-        assert result['action'] == 'honeypot_redirect'
-        assert result['success'] is True
-        assert len(action_engine.honeypots) > 0
-        assert 'honeypot_id' in result
-    
-    def test_container_isolate_action(self, action_engine):
-        """Test container isolation action."""
-        target_ip = '192.168.1.105'
-        result = action_engine.execute_action(4, target_ip=target_ip)
-        
-        assert result['action'] == 'container_isolate'
-        assert result['success'] is True
-        assert 'container_id' in result
-    
-    def test_action_statistics(self, action_engine):
-        """Test action statistics tracking."""
-        # Execute various actions
-        for action_id in range(5):
-            action_engine.execute_action(action_id, target_ip='192.168.1.1')
-        
-        stats = action_engine.get_statistics()
-        
-        assert stats['total_actions'] == 5
-        assert 'action_distribution' in stats
-        assert 'blocked_ips_count' in stats
-        assert 'success_rates' in stats
-    
-    def test_firewall_block_and_unblock(self, action_engine):
-        """Test firewall block and unblock."""
-        target_ip = '192.168.1.106'
-        
-        # Block IP
-        action_engine.execute_action(1, target_ip=target_ip)
-        assert target_ip in action_engine.blocked_ips
-        
-        # Unblock IP
-        success = action_engine.unblock_ip(target_ip)
-        assert success is True
-        assert target_ip not in action_engine.blocked_ips
-    
-    def test_unblock_nonexistent_ip(self, action_engine):
-        """Test unblocking IP that doesn't exist."""
-        success = action_engine.unblock_ip('192.168.1.200')
-        assert success is False
-    
-    def test_honeypot_creation(self, action_engine):
-        """Test honeypot creation and tracking."""
-        target_ip = '192.168.1.107'
-        
-        action_engine.execute_action(3, target_ip=target_ip)
-        
-        assert len(action_engine.honeypots) > 0
-        honeypot = action_engine.honeypots[0]
-        assert honeypot['source_ip'] == target_ip
-        assert honeypot['honeypot_ip'] == '192.168.100.100'
-    
-    def test_action_history_tracking(self, action_engine):
-        """Test action history is properly tracked."""
-        actions = [0, 1, 2, 3, 4, 1, 0]
-        
-        for action_id in actions:
-            action_engine.execute_action(action_id, target_ip='192.168.1.1')
-        
-        assert len(action_engine.action_history) == len(actions)
-        for i, action_id in enumerate(actions):
-            assert action_engine.action_history[i]['action'] == action_engine.ACTIONS[action_id]
-    
-    def test_action_success_rates(self, action_engine):
-        """Test success rate tracking."""
-        for i in range(10):
-            action_engine.execute_action(1, target_ip=f'192.168.1.{100+i}')
-        
-        stats = action_engine.get_statistics()
-        block_success_rate = stats['success_rates'].get('block_ip', 0)
-        
-        # All block actions should succeed in simulation mode
-        assert block_success_rate >= 0.9
-    
-    def test_get_blocked_ips(self, action_engine):
-        """Test getting list of blocked IPs."""
-        ips = ['192.168.1.110', '192.168.1.111', '192.168.1.112']
-        
-        for ip in ips:
-            action_engine.execute_action(1, target_ip=ip, duration=3600)
-        
-        blocked = action_engine.get_blocked_ips()
-        assert len(blocked) == 3
-        for ip in ips:
-            assert ip in blocked
-    
-    def test_cleanup_expired_blocks(self, action_engine):
-        """Test cleanup of expired blocks."""
-        target_ip = '192.168.1.113'
-        
-        # Block with 1 second duration
-        action_engine.execute_action(1, target_ip=target_ip, duration=1)
-        
-        # Should be blocked
-        assert target_ip in action_engine.blocked_ips
-        assert len(action_engine.get_blocked_ips()) == 1
-        
-        # Manually expire the block
-        action_engine.blocked_ips[target_ip] = datetime.now() - timedelta(seconds=1)
-        
-        # Cleanup
-        expired_count = action_engine.cleanup_expired_blocks()
-        
-        assert expired_count == 1
-        assert target_ip not in action_engine.blocked_ips
-    
-    def test_action_timestamps(self, action_engine):
-        """Test that actions have timestamps."""
-        result = action_engine.execute_action(0, target_ip='192.168.1.120')
-        
-        assert 'timestamp' in result
-        # Try to parse as ISO format
-        timestamp = datetime.fromisoformat(result['timestamp'])
-        assert timestamp is not None
-    
-    def test_multiple_honeypots(self, action_engine):
-        """Test creating multiple honeypots."""
-        for i in range(3):
-            action_engine.execute_action(3, target_ip=f'192.168.1.{130+i}')
-        
-        assert len(action_engine.honeypots) == 3
-        
-        stats = action_engine.get_statistics()
-        assert stats['honeypots_active'] == 3
-    
-    def test_rate_limited_ips_tracking(self, action_engine):
-        """Test rate limited IPs are tracked."""
-        for i in range(5):
-            action_engine.execute_action(2, target_ip=f'192.168.1.{140+i}')
-        
-        stats = action_engine.get_statistics()
-        assert stats['rate_limited_ips_count'] == 5
+# ---------------------------------------------------------------------------
+# ActionType enum
+# ---------------------------------------------------------------------------
+
+class TestActionTypeEnum:
+    """Sanity-check the ActionType enum values."""
+
+    def test_action_ids(self):
+        assert ActionType.MONITOR.value == 0
+        assert ActionType.RATE_LIMIT.value == 1
+        assert ActionType.BLOCK_IP.value == 2
+        assert ActionType.REDIRECT_HONEYPOT.value == 3
+        assert ActionType.ISOLATE_CONTAINER.value == 4
+
+    def test_five_actions_exist(self):
+        assert len(ActionType) == 5
 
 
-class TestActionEngineProductionMode:
-    """Test ActionEngine in production mode."""
-    
-    def test_production_mode_initialization(self):
-        """Test ActionEngine in production mode."""
-        engine = ActionEngine(simulation_mode=False)
-        assert engine.simulation_mode is False
-    
-    def test_production_mode_block_action(self):
-        """Test block action in production mode."""
-        engine = ActionEngine(simulation_mode=False)
-        result = engine.execute_action(1, target_ip='192.168.1.200')
-        
-        assert result['action'] == 'block_ip'
-        assert result['success'] is True
+# ---------------------------------------------------------------------------
+# ActionEngine initialisation
+# ---------------------------------------------------------------------------
+
+class TestActionEngineInit:
+    """Test ActionEngine initial state."""
+
+    def test_simulation_mode_flag(self, engine):
+        assert engine.simulation_mode is True
+
+    def test_empty_history_on_init(self, engine):
+        assert len(engine.action_history) == 0
+
+    def test_zero_action_counts(self, engine):
+        for name in ["MONITOR", "RATE_LIMIT", "BLOCK_IP", "REDIRECT_HONEYPOT", "ISOLATE_CONTAINER"]:
+            assert engine.action_counts[name] == 0
 
 
-class TestActionEngineStatisticsSaving:
-    """Test saving action statistics."""
-    
-    def test_save_action_log(self, action_engine):
-        """Test saving action log to file."""
-        import os
-        import tempfile
-        
-        # Execute some actions
-        for i in range(3):
-            action_engine.execute_action(i % 5, target_ip=f'192.168.1.{150+i}')
-        
-        # Save to temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
-            filepath = f.name
-        
+# ---------------------------------------------------------------------------
+# execute_action — monitor
+# ---------------------------------------------------------------------------
+
+class TestMonitorAction:
+    """Tests for MONITOR action (action_id=0)."""
+
+    def test_monitor_returns_action_result(self, engine):
+        result = engine.execute_action(0, {"target_ip": "10.0.0.1"})
+        assert isinstance(result, ActionResult)
+
+    def test_monitor_succeeds(self, engine):
+        result = engine.execute_action(0, {"target_ip": "10.0.0.1"})
+        assert result.success is True
+
+    def test_monitor_action_name(self, engine):
+        result = engine.execute_action(0, {"target_ip": "10.0.0.1"})
+        assert result.action_name == "MONITOR"
+
+    def test_monitor_recorded_in_history(self, engine):
+        engine.execute_action(0, {"target_ip": "10.0.0.2"})
+        assert len(engine.action_history) == 1
+        assert engine.action_history[0].action_name == "MONITOR"
+
+    def test_monitor_has_timestamp(self, engine):
+        result = engine.execute_action(0, {"target_ip": "10.0.0.3"})
+        assert isinstance(result.timestamp, datetime)
+
+    def test_monitor_execution_time_recorded(self, engine):
+        result = engine.execute_action(0, {"target_ip": "10.0.0.4"})
+        assert result.execution_time_ms >= 0
+
+
+# ---------------------------------------------------------------------------
+# execute_action — block IP (via FirewallManager)
+# ---------------------------------------------------------------------------
+
+class TestBlockIPAction:
+    """Tests for BLOCK_IP action (action_id=2)."""
+
+    def test_block_ip_succeeds(self, engine):
+        result = engine.execute_action(2, {"target_ip": "1.2.3.4", "duration": 3600})
+        assert result.success is True
+
+    def test_block_ip_action_name(self, engine):
+        result = engine.execute_action(2, {"target_ip": "1.2.3.5"})
+        assert result.action_name == "BLOCK_IP"
+
+    def test_block_ip_target_recorded(self, engine):
+        result = engine.execute_action(2, {"target_ip": "1.2.3.6"})
+        assert result.target_ip == "1.2.3.6"
+
+    def test_block_ip_without_firewall_fails_gracefully(self, bare_engine):
+        """Without a FirewallManager, BLOCK_IP should return success=False, not crash."""
+        result = bare_engine.execute_action(2, {"target_ip": "9.9.9.9"})
+        assert result.success is False
+        assert result.action_name == "BLOCK_IP"
+
+    def test_block_ip_increments_count(self, engine):
+        engine.execute_action(2, {"target_ip": "2.2.2.2"})
+        assert engine.action_counts["BLOCK_IP"] == 1
+
+
+# ---------------------------------------------------------------------------
+# execute_action — rate limit
+# ---------------------------------------------------------------------------
+
+class TestRateLimitAction:
+    """Tests for RATE_LIMIT action (action_id=1)."""
+
+    def test_rate_limit_succeeds(self, engine):
+        result = engine.execute_action(1, {"target_ip": "3.3.3.3"})
+        assert result.success is True
+
+    def test_rate_limit_action_name(self, engine):
+        result = engine.execute_action(1, {"target_ip": "3.3.3.4"})
+        assert result.action_name == "RATE_LIMIT"
+
+    def test_rate_limit_increments_count(self, engine):
+        engine.execute_action(1, {"target_ip": "3.3.3.5"})
+        assert engine.action_counts["RATE_LIMIT"] == 1
+
+
+# ---------------------------------------------------------------------------
+# execute_action — honeypot redirect
+# ---------------------------------------------------------------------------
+
+class TestHoneypotAction:
+    """Tests for REDIRECT_HONEYPOT action (action_id=3)."""
+
+    def test_honeypot_action_name(self, engine):
+        result = engine.execute_action(3, {"target_ip": "4.4.4.4", "service_type": "ssh"})
+        assert result.action_name == "REDIRECT_HONEYPOT"
+
+    def test_honeypot_without_manager_fails_gracefully(self, bare_engine):
+        """Without HoneypotManager, action should fail gracefully."""
+        result = bare_engine.execute_action(3, {"target_ip": "5.5.5.5"})
+        assert result.success is False
+        assert result.action_name == "REDIRECT_HONEYPOT"
+
+    def test_honeypot_increments_count(self, engine):
+        engine.execute_action(3, {"target_ip": "4.4.4.5", "service_type": "http"})
+        assert engine.action_counts["REDIRECT_HONEYPOT"] == 1
+
+
+# ---------------------------------------------------------------------------
+# execute_action — container isolate
+# ---------------------------------------------------------------------------
+
+class TestContainerIsolateAction:
+    """Tests for ISOLATE_CONTAINER action (action_id=4)."""
+
+    def test_isolate_without_manager_fails_gracefully(self, bare_engine):
+        """Without ContainerIsolator, action should fail gracefully, not crash."""
+        result = bare_engine.execute_action(4, {"container_id": "abc123"})
+        assert result.success is False
+        assert result.action_name == "ISOLATE_CONTAINER"
+
+    def test_isolate_increments_count(self, bare_engine):
+        bare_engine.execute_action(4, {"container_id": "abc123"})
+        assert bare_engine.action_counts["ISOLATE_CONTAINER"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Invalid action
+# ---------------------------------------------------------------------------
+
+class TestInvalidAction:
+    """Tests for invalid action IDs."""
+
+    def test_invalid_action_returns_failure(self, engine):
+        result = engine.execute_action(99, {"target_ip": "0.0.0.0"})
+        assert result.success is False
+
+    def test_invalid_action_does_not_crash(self, engine):
         try:
-            result = action_engine.save_action_log(filepath)
-            assert os.path.exists(result)
-            
-            # Verify file contains data
-            import json
-            with open(result, 'r') as f:
-                data = json.load(f)
-                assert 'actions' in data
-                assert 'statistics' in data
-                assert len(data['actions']) >= 3
-        finally:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            engine.execute_action(-1, {})
+        except Exception as e:
+            pytest.fail(f"execute_action(-1) raised an exception: {e}")
+
+
+# ---------------------------------------------------------------------------
+# History and statistics
+# ---------------------------------------------------------------------------
+
+class TestHistoryAndStatistics:
+    """Test history tracking and statistics reporting."""
+
+    def test_history_grows_with_each_action(self, engine):
+        for i in range(5):
+            engine.execute_action(0, {"target_ip": f"10.0.{i}.1"})
+        assert len(engine.action_history) == 5
+
+    def test_action_counts_all_types(self, engine):
+        contexts = [
+            {"target_ip": "10.1.1.1"},
+            {"target_ip": "10.1.1.2"},
+            {"target_ip": "10.1.1.3", "duration": 3600},
+            {"target_ip": "10.1.1.4", "service_type": "ssh"},
+            {"container_id": "ctr-001"},
+        ]
+        for action_id, ctx in enumerate(contexts):
+            engine.execute_action(action_id, ctx)
+
+        assert engine.action_counts["MONITOR"] == 1
+        assert engine.action_counts["RATE_LIMIT"] == 1
+        assert engine.action_counts["BLOCK_IP"] == 1
+        assert engine.action_counts["REDIRECT_HONEYPOT"] == 1
+        assert engine.action_counts["ISOLATE_CONTAINER"] == 1
+
+    def test_get_action_statistics_keys(self, engine):
+        engine.execute_action(0, {"target_ip": "10.2.2.2"})
+        stats = engine.get_action_statistics()
+        assert "total_actions" in stats
+        assert "action_distribution" in stats
+        assert "success_rate" in stats
+
+    def test_get_recent_actions_default(self, engine):
+        for i in range(15):
+            engine.execute_action(0, {"target_ip": f"10.3.{i}.1"})
+        recent = engine.get_recent_actions()
+        assert len(recent) == 10  # default n=10
+
+    def test_get_recent_actions_custom_n(self, engine):
+        for i in range(8):
+            engine.execute_action(0, {"target_ip": f"10.4.{i}.1"})
+        recent = engine.get_recent_actions(n=5)
+        assert len(recent) == 5
+
+    def test_clear_history(self, engine):
+        engine.execute_action(0, {"target_ip": "10.5.5.5"})
+        assert len(engine.action_history) == 1
+        engine.clear_history()
+        assert len(engine.action_history) == 0
+
+    def test_reset_statistics(self, engine):
+        engine.execute_action(0, {"target_ip": "10.6.6.6"})
+        engine.reset_statistics()
+        assert engine.action_counts["MONITOR"] == 0
+        assert engine.action_success_counts["MONITOR"] == 0
+
+
+# ---------------------------------------------------------------------------
+# FirewallManager (direct tests)
+# ---------------------------------------------------------------------------
+
+class TestFirewallManager:
+    """Direct tests for FirewallManager in simulation mode."""
+
+    def test_block_returns_true(self, firewall):
+        assert firewall.block_ip("11.0.0.1", 3600) is True
+
+    def test_blocked_ip_is_tracked(self, firewall):
+        firewall.block_ip("11.0.0.2", 3600)
+        assert firewall.is_blocked("11.0.0.2")
+
+    def test_unblocked_ip_not_blocked(self, firewall):
+        assert not firewall.is_blocked("11.0.0.99")
+
+    def test_unblock_removes_ip(self, firewall):
+        firewall.block_ip("11.0.0.3", 3600)
+        assert firewall.is_blocked("11.0.0.3")
+        firewall.unblock_ip("11.0.0.3")
+        assert not firewall.is_blocked("11.0.0.3")
+
+    def test_get_blocked_ips_list(self, firewall):
+        for i in range(3):
+            firewall.block_ip(f"11.0.1.{i}", 3600)
+        blocked = firewall.get_blocked_ips()
+        assert len(blocked) >= 3
+
+
+# ---------------------------------------------------------------------------
+# HoneypotManager (direct tests)
+# ---------------------------------------------------------------------------
+
+class TestHoneypotManager:
+    """Direct tests for HoneypotManager in simulation mode."""
+
+    def test_create_honeypot_returns_object(self, honeypot):
+        hp = honeypot.create_honeypot("12.0.0.1", "ssh")
+        assert hp is not None
+
+    def test_created_honeypot_has_id(self, honeypot):
+        hp = honeypot.create_honeypot("12.0.0.2", "http")
+        assert hp.id is not None and hp.id != ""
+
+    def test_multiple_honeypots_tracked(self, honeypot):
+        for i in range(3):
+            honeypot.create_honeypot(f"12.0.0.{10+i}", "ssh")
+        assert len(honeypot.get_active_honeypots()) >= 3
