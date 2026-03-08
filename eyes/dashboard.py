@@ -197,7 +197,7 @@ class SOARDashboard:
         self.events.append(event)
         self.state['total_events'] = len(self.events)
         try:
-            self.socketio.emit('new_event', event, broadcast=True)
+            self.socketio.emit('new_event', event)
         except:
             pass
     
@@ -205,7 +205,7 @@ class SOARDashboard:
         """Add an action to the actions log."""
         self.actions.append(action)
         try:
-            self.socketio.emit('new_action', action, broadcast=True)
+            self.socketio.emit('new_action', action)
         except:
             pass
     
@@ -214,7 +214,7 @@ class SOARDashboard:
         self.state.update(state_data)
         self.state['timestamp'] = datetime.now().isoformat()
         try:
-            self.socketio.emit('state_update', self.state, broadcast=True)
+            self.socketio.emit('state_update', self.state)
         except:
             pass
     
@@ -242,7 +242,11 @@ class SOARDashboard:
             self.events.append(event)
             self.metrics['total_attacks'] += 1
             self.metrics['attack_types'][attack_type] += 1
-            
+            try:
+                self.socketio.emit('new_event', event)
+            except Exception:
+                pass
+
             # Auto-response
             if severity in ['CRITICAL', 'HIGH']:
                 action = {
@@ -256,6 +260,10 @@ class SOARDashboard:
                 }
                 self.actions.append(action)
                 self.metrics['blocked_attacks'] += 1
+                try:
+                    self.socketio.emit('new_action', action)
+                except Exception:
+                    pass
         
         # Update system metrics
         self.state['cpu_usage'] = 30 + random.gauss(0, 15)
@@ -295,13 +303,15 @@ class SOARDashboard:
                         'false_positive_rate': self.metrics['false_positive_rate'],
                         'avg_response_time_ms': self.metrics['avg_response_time_ms'],
                         'attack_types': self.metrics['attack_types'],
+                        'response_times': list(self.metrics['response_times']),
                     },
                     'training': {
                         'episodes': self.training_stats['episodes'],
                         'avg_reward': self.training_stats['avg_reward'],
+                        'reward_history': list(self.training_stats['reward_history']),
                         'epsilon': self.training_stats['epsilon'],
                     },
-                }, broadcast=True)
+                })
                 
                 time.sleep(2)
             except Exception as e:
