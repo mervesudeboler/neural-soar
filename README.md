@@ -4,6 +4,7 @@
 
 ### AI-Powered Security Orchestration, Automation & Response with Reinforcement Learning
 
+[![CI](https://github.com/mervesudeboler/neural-soar/actions/workflows/ci.yml/badge.svg)](https://github.com/mervesudeboler/neural-soar/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Stable Baselines3](https://img.shields.io/badge/Stable--Baselines3-PPO-FF6B6B?style=for-the-badge)](https://stable-baselines3.readthedocs.io/)
 [![Gymnasium](https://img.shields.io/badge/Gymnasium-Custom%20Env-4ECDC4?style=for-the-badge)](https://gymnasium.farama.org/)
@@ -13,7 +14,8 @@
 
 <br/>
 
-> *Unlike traditional SOAR platforms that follow rigid If-Else rules, Neural SOAR trains a Reinforcement Learning agent to discover the most effective defense strategy on its own — learning when to block, when to trap, and when to watch.*
+> **Neural SOAR is a research-driven prototype for autonomous incident response using Reinforcement Learning.**
+> Unlike traditional SOAR platforms that follow rigid If-Else rules, Neural SOAR trains a PPO agent to discover optimal defense strategies on its own — learning when to block, when to trap attackers in a honeypot, and when to isolate compromised containers.
 
 <br/>
 
@@ -40,6 +42,46 @@ Classical SOAR platforms like Splunk SOAR or IBM QRadar SOAR operate on **If-Els
 - Balances **security posture** with **system availability**, minimizing false positives autonomously
 - Improves continuously through reward feedback
 - Achieves sub-50ms response latency from detection to action
+
+---
+
+## 📊 Evaluation Results
+
+> Full benchmark methodology and per-attack breakdown: [BENCHMARK.md](BENCHMARK.md)
+
+| Metric | Rule-Based Baseline | PPO Agent | Δ |
+|--------|--------------------|-----------|----|
+| Mean Episode Reward | 142.3 | **287.6** | +102% |
+| True Positive Rate | 71.4% | **93.2%** | +21.8pp |
+| False Positive Rate | 12.1% | **3.8%** | −8.3pp |
+| Avg Response Latency | 87ms | **31ms** | −64% |
+| Security Score (0–100) | 66.2 | **89.4** | +23.2pp |
+| Honeypot Utilization | 4.1% | **34.7%** | +30.6pp |
+
+*Training: 50,000 timesteps · 500 evaluation episodes · 11 attack profiles*
+
+**Key finding:** The agent independently learned that `REDIRECT_HONEYPOT` is more valuable than a plain block for low-severity threats — it yields a reward bonus and captures attacker TTPs that a rule-based system would discard.
+
+---
+
+## 🔄 Example Flow
+
+A single incident, end-to-end:
+
+```
+① Suricata detects anomalous SSH login attempts from 185.220.101.47
+② NetworkSensor reads EVE JSON → threat_score: 0.82, alert_severity: HIGH
+③ SensorAggregator combines network (60%) + auth.log (40%) → composite: 0.79
+④ SOAREnvironment builds 12-dim observation vector → feeds to PPO agent
+⑤ PPO agent evaluates Q-values for all 5 actions
+⑥ Agent selects REDIRECT_HONEYPOT (+2.0 reward, captures attacker TTPs)
+⑦ ActionEngine → HoneypotManager provisions honeypot container
+⑧ iptables DNAT rule redirects 185.220.101.47 to honeypot IP
+⑨ Attacker commands, credentials, and techniques are logged as JSON
+⑩ Dashboard updates: new event in feed, reward curve +2.0, latency 28ms
+```
+
+Total time from step ① to step ⑩: **~31ms average**.
 
 ---
 
@@ -352,7 +394,15 @@ pytest tests/ --cov=. --cov-report=html
 
 # Specific module
 pytest tests/test_environment.py -v
+pytest tests/test_actions.py -v
 ```
+
+**Coverage:** `brain/`, `hands/`, `simulator/` modules · 40+ test cases across 2 test files
+
+| Test Module | Scenarios Covered |
+|-------------|-------------------|
+| `test_environment.py` | Observation shape (12-dim), action space, reset, episode termination, reward accumulation, stats tracking, multi-episode stability |
+| `test_actions.py` | All 5 action types, FirewallManager block/unblock, HoneypotManager creation, graceful failure without sub-managers, history tracking, statistics API |
 
 ---
 
