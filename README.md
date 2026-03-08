@@ -132,43 +132,68 @@ R_total = R_action + R_latency + R_stability
 
 ```bash
 Python 3.9+
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
-### Option 1: Full Simulation (Recommended)
+### ▶ Option 1: Live Dashboard — Demo Mode (Instant, No Setup)
+
+The fastest way to see the system in action. Generates realistic simulated attack traffic with full dashboard visualization.
 
 ```bash
 git clone https://github.com/mervesudeboler/neural-soar.git
 cd neural-soar
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
-# Trains the agent, runs attack simulation, launches live dashboard
-python scripts/run_simulation.py --mode full
+python3 -c "
+import sys, os
+sys.path.insert(0, os.getcwd())
+from eyes.dashboard import SOARDashboard
+d = SOARDashboard(demo_mode=True)
+print('Dashboard → http://127.0.0.1:8080')
+d.start(host='127.0.0.1', port=8080)
+"
 ```
 
-Then open `http://localhost:5000` for the live dashboard.
+Open `http://127.0.0.1:8080` in your browser. You'll see live attack events, agent actions, and security metrics — all auto-generated in simulation mode.
 
-### Option 2: Train Only
+### ▶ Option 2: Train the RL Agent
 
 ```bash
-python scripts/run_simulation.py --mode train --timesteps 100000
-# or
-python scripts/train_agent.py
+python3 start.py --train --timesteps 100000
 ```
 
-### Option 3: Dashboard Demo (No Training Required)
+Trains the PPO agent on simulated attack scenarios. Model saved to `brain/models/`.
+
+### ▶ Option 3: Run Attack Simulation
 
 ```bash
-python scripts/run_simulation.py --mode dashboard
+python3 start.py --simulate --episodes 10
 ```
 
-### Option 4: Docker (Full Stack)
+### ▶ Option 4: Docker (Full Stack)
 
 ```bash
 docker-compose up --build
 ```
 
 Starts: Redis → Trainer → SOAR Agent → Dashboard
+
+---
+
+## 🔄 Demo Mode vs Production Mode
+
+| Feature | Demo Mode | Production Mode |
+|---------|-----------|----------------|
+| Attack data | Simulated (realistic random) | Real Suricata/Snort IDS alerts |
+| System logs | Simulated | Real `/var/log/auth.log`, `/var/log/syslog` |
+| Firewall actions | Logged only | Real `iptables`/`nftables` rules |
+| Container isolation | Simulated | Real Docker/Kubernetes pods |
+| Setup required | Just Python | Linux server + Suricata IDS + Docker |
+| Use case | Development, portfolio, demo | Production security infrastructure |
+
+**Demo mode** is the default and works on any machine (Mac, Windows, Linux). It generates realistic attack scenarios — port scans, DDoS, brute force, SQL injection — and shows the RL agent's autonomous responses in real time.
+
+**Production mode** requires a Linux server with Suricata IDS installed and network traffic to monitor. The sensors read real alert logs and the action engine applies real firewall rules.
 
 ---
 
