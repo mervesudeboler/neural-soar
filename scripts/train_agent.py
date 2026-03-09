@@ -64,14 +64,14 @@ def main():
     print("Creating RL agent (PPO)...")
     agent = SOARAgent(env)
 
-    # Create trainer
-    Path('logs').mkdir(exist_ok=True)
-    trainer = SOARTrainer(agent, env, output_dir='logs')
+    if agent.use_rule_based or not hasattr(agent.model, 'learn'):
+        print("ERROR: PPO not available. Run: pip3 install stable-baselines3")
+        return 1
 
-    print("Starting training...\n")
+    print(f"PPO initialized. Starting real training ({args.timesteps:,} timesteps)...\n")
+    Path('logs').mkdir(exist_ok=True)
     try:
-        episodes = max(10, args.timesteps // 200)
-        trainer.train(episodes=episodes, timesteps_per_episode=200)
+        agent.train(env, total_timesteps=args.timesteps)
     except Exception as e:
         print(f"Error during training: {e}")
         import traceback; traceback.print_exc()
@@ -82,12 +82,29 @@ def main():
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     agent.save(args.output)
 
-    # Evaluate model
-    print("\nEvaluating trained agent...")
-    mean_reward, std_reward = trainer.evaluate(n_episodes=5)
-    metrics = {"mean_reward": mean_reward, "std_reward": std_reward}
+    # Collect evaluation episodes for visualization
+    print("\nRunning evaluation episodes for metrics...")
+    import numpy as _np
+    ep_rewards, ep_steps_list = [], []
+    for ep in range(50):
+        obs, _ = env.reset()
+        total_r, steps = 0.0, 0
+        for _ in range(200):
+            action, _ = agent.predict(obs)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            total_r += reward
+            steps += 1
+            if terminated or truncated:
+                break
+        ep_rewards.append(total_r)
+        ep_steps_list.append(steps)
 
-    print("\nEvaluation Results:")
+    mean_reward = float(_np.mean(ep_rewards))
+    std_reward  = float(_np.std(ep_rewards))
+    metrics = {"mean_reward": mean_reward, "std_reward": std_reward,
+               "episodes": 50, "timesteps": args.timesteps}
+
+    print("\nEvaluation Results (50 episodes after PPO training):")
     print(f"  Mean Reward: {mean_reward:.2f}")
     print(f"  Std Reward:  {std_reward:.2f}\n")
     
@@ -106,8 +123,7 @@ def main():
         import matplotlib.pyplot as plt
         import numpy as np
 
-        ep_rewards = trainer.episode_rewards  # real data from training
-        ep_steps   = trainer.episode_steps
+        ep_steps   = ep_steps_list  # from evaluation episodes above
         n = len(ep_rewards)
 
         if n == 0:
