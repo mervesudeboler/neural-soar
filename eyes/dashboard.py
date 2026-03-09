@@ -197,7 +197,7 @@ class SOARDashboard:
         self.state['total_events'] = len(self.events)
         try:
             self.socketio.emit('new_event', event)
-        except:
+        except Exception:
             pass
 
     def add_action(self, action):

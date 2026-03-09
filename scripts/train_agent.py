@@ -73,7 +73,7 @@ def main():
     except Exception as e:
         print(f"Error during training: {e}")
         import traceback
-            traceback.print_exc()
+        traceback.print_exc()
         return 1
 
     # Save model
@@ -147,7 +147,8 @@ def main():
             def style(ax, title, xlabel, ylabel):
                 ax.set_facecolor(PANEL)
                 for sp in ax.spines.values():
-                    sp.set_color(GRID); sp.set_linewidth(0.8)
+                    sp.set_color(GRID)
+                    sp.set_linewidth(0.8)
                 ax.tick_params(colors=MUTED, labelsize=8)
                 ax.set_title(title, color=TEXT, fontsize=10, fontweight='bold', pad=7)
                 ax.set_xlabel(xlabel, color=MUTED, fontsize=8)
@@ -200,7 +201,8 @@ def main():
         print("Matplotlib not available, skipping visualization")
     except Exception as e:
         print(f"Error generating visualization: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
 
     print("\n" + "="*60)
     print("TRAINING COMPLETE")
