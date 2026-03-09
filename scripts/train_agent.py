@@ -70,7 +70,8 @@ def main():
 
     print("Starting training...\n")
     try:
-        trainer.train(total_timesteps=args.timesteps)
+        episodes = max(10, args.timesteps // 200)
+        trainer.train(episodes=episodes, timesteps_per_episode=200)
     except Exception as e:
         print(f"Error during training: {e}")
         import traceback; traceback.print_exc()
@@ -83,14 +84,12 @@ def main():
 
     # Evaluate model
     print("\nEvaluating trained agent...")
-    metrics = trainer.evaluate(num_episodes=5)
-    
+    mean_reward, std_reward = trainer.evaluate(n_episodes=5)
+    metrics = {"mean_reward": mean_reward, "std_reward": std_reward}
+
     print("\nEvaluation Results:")
-    print(f"  Mean Reward: {metrics.get('mean_reward', 0):.2f}")
-    print(f"  Std Reward: {metrics.get('std_reward', 0):.2f}")
-    print(f"  Max Reward: {metrics.get('max_reward', 0):.2f}")
-    print(f"  Min Reward: {metrics.get('min_reward', 0):.2f}")
-    print(f"  Mean Episode Length: {metrics.get('mean_length', 0):.1f}\n")
+    print(f"  Mean Reward: {mean_reward:.2f}")
+    print(f"  Std Reward:  {std_reward:.2f}\n")
     
     # Save metrics
     Path('logs').mkdir(exist_ok=True)
