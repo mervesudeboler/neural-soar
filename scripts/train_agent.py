@@ -98,60 +98,94 @@ def main():
         json.dump(metrics, f, indent=2)
     print(f"Metrics saved to {metrics_file}")
     
-    # Generate training curve plot
-    print("\nGenerating training visualization...")
+    # Generate training curve from REAL episode data
+    print("\nGenerating training visualization from real episode data...")
     try:
+        import matplotlib
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         import numpy as np
-        
-        # Create dummy training data for visualization
-        episodes = list(range(1, args.episodes + 1))
-        rewards = [np.random.uniform(0, 50) + i*5 for i in range(args.episodes)]
-        
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-        
-        # Reward curve
-        axes[0, 0].plot(episodes, rewards, 'b-', linewidth=2)
-        axes[0, 0].set_xlabel('Episode')
-        axes[0, 0].set_ylabel('Reward')
-        axes[0, 0].set_title('Training Reward Curve')
-        axes[0, 0].grid(True)
-        
-        # Action distribution
-        actions = ['Monitor', 'Block', 'Rate Limit', 'Honeypot', 'Isolate']
-        counts = [np.random.randint(100, 1000) for _ in range(5)]
-        axes[0, 1].bar(actions, counts)
-        axes[0, 1].set_title('Action Distribution')
-        axes[0, 1].set_ylabel('Count')
-        axes[0, 1].tick_params(axis='x', rotation=45)
-        
-        # Response latency
-        latencies = np.random.uniform(0.01, 2.0, 100)
-        axes[1, 0].hist(latencies, bins=20, edgecolor='black')
-        axes[1, 0].set_xlabel('Response Latency (seconds)')
-        axes[1, 0].set_ylabel('Frequency')
-        axes[1, 0].set_title('Response Latency Distribution')
-        
-        # Security score
-        steps = list(range(0, 1000, 10))
-        scores = [min(s/1000 + 0.5, 1.0) for s in steps]
-        axes[1, 1].plot(steps, scores, 'g-', linewidth=2)
-        axes[1, 1].set_xlabel('Training Step')
-        axes[1, 1].set_ylabel('Security Score')
-        axes[1, 1].set_title('Security Score Over Time')
-        axes[1, 1].set_ylim([0, 1])
-        axes[1, 1].grid(True)
-        
-        plt.tight_layout()
-        plot_file = 'logs/training_visualization.png'
-        plt.savefig(plot_file, dpi=100)
-        print(f"Training visualization saved to {plot_file}")
-        plt.close()
-        
+
+        ep_rewards = trainer.episode_rewards  # real data from training
+        ep_steps   = trainer.episode_steps
+        n = len(ep_rewards)
+
+        if n == 0:
+            print("No episode data to visualize.")
+        else:
+            ep_x = list(range(1, n + 1))
+
+            # Rolling mean helper
+            def rolling(arr, w=10):
+                out = []
+                for i in range(len(arr)):
+                    start = max(0, i - w + 1)
+                    out.append(np.mean(arr[start:i+1]))
+                return out
+
+            fig, axes = plt.subplots(2, 2, figsize=(13, 8))
+            fig.patch.set_facecolor('#0d1117')
+            BLUE, GREEN, ORANGE = '#58a6ff', '#3fb950', '#d29922'
+            BG, PANEL, GRID = '#0d1117', '#161b22', '#21262d'
+            TEXT, MUTED = '#e6edf3', '#8b949e'
+
+            def style(ax, title, xlabel, ylabel):
+                ax.set_facecolor(PANEL)
+                for sp in ax.spines.values():
+                    sp.set_color(GRID); sp.set_linewidth(0.8)
+                ax.tick_params(colors=MUTED, labelsize=8)
+                ax.set_title(title, color=TEXT, fontsize=10, fontweight='bold', pad=7)
+                ax.set_xlabel(xlabel, color=MUTED, fontsize=8)
+                ax.set_ylabel(ylabel, color=MUTED, fontsize=8)
+                ax.grid(True, color=GRID, linewidth=0.6, linestyle='--', alpha=0.8)
+
+            # 1. Episode reward curve
+            ax = axes[0, 0]
+            ax.plot(ep_x, ep_rewards, color=BLUE, alpha=0.35, linewidth=0.8)
+            ax.plot(ep_x, rolling(ep_rewards, 10), color=BLUE, linewidth=2, label='Rolling mean')
+            style(ax, 'Episode Reward (Real Training)', 'Episode', 'Reward')
+            ax.legend(fontsize=8, facecolor=PANEL, edgecolor=GRID, labelcolor=TEXT)
+
+            # 2. Episode length
+            ax = axes[0, 1]
+            ax.plot(ep_x, ep_steps, color=GREEN, alpha=0.35, linewidth=0.8)
+            ax.plot(ep_x, rolling(ep_steps, 10), color=GREEN, linewidth=2, label='Rolling mean')
+            style(ax, 'Episode Length', 'Episode', 'Steps')
+            ax.legend(fontsize=8, facecolor=PANEL, edgecolor=GRID, labelcolor=TEXT)
+
+            # 3. Cumulative reward
+            ax = axes[1, 0]
+            cum = np.cumsum(ep_rewards)
+            ax.plot(ep_x, cum, color=ORANGE, linewidth=2)
+            ax.fill_between(ep_x, 0, cum, alpha=0.1, color=ORANGE)
+            style(ax, 'Cumulative Reward', 'Episode', 'Total Reward')
+
+            # 4. Reward distribution histogram
+            ax = axes[1, 1]
+            ax.hist(ep_rewards, bins=min(20, max(5, n//5)),
+                    color=BLUE, alpha=0.8, edgecolor=GRID)
+            ax.axvline(np.mean(ep_rewards), color=GREEN, linewidth=1.5,
+                       linestyle='--', label=f'Mean: {np.mean(ep_rewards):.1f}')
+            style(ax, 'Reward Distribution', 'Reward', 'Frequency')
+            ax.legend(fontsize=8, facecolor=PANEL, edgecolor=GRID, labelcolor=TEXT)
+
+            fig.suptitle(
+                f'Neural SOAR — PPO Training Results  '
+                f'({n} episodes · {sum(ep_steps):,} total steps)',
+                color=TEXT, fontsize=13, fontweight='bold', y=0.98
+            )
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            plot_file = 'logs/training_visualization.png'
+            plt.savefig(plot_file, dpi=130, bbox_inches='tight',
+                        facecolor='#0d1117')
+            plt.close()
+            print(f"Training visualization saved to {plot_file}")
+
     except ImportError:
         print("Matplotlib not available, skipping visualization")
     except Exception as e:
         print(f"Error generating visualization: {e}")
+        import traceback; traceback.print_exc()
     
     print("\n" + "="*60)
     print("TRAINING COMPLETE")
