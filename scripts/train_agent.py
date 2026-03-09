@@ -11,8 +11,9 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from neural_soar.environment import SOAREnvironment
-from neural_soar.brain import RLBrain
+from brain.environment import SOAREnvironment
+from brain.agent import SOARAgent
+from brain.train import SOARTrainer
 import yaml
 
 
@@ -55,32 +56,34 @@ def main():
     
     # Create environment
     print("Initializing environment...")
-    env = SOAREnvironment(config)
+    env = SOAREnvironment()
     print(f"  Observation space: {env.observation_space}")
     print(f"  Action space: {env.action_space}\n")
-    
-    # Create and train brain
-    print("Creating RL agent...")
-    brain = RLBrain(env, config.get('brain', {}))
-    
+
+    # Create agent
+    print("Creating RL agent (PPO)...")
+    agent = SOARAgent(env)
+
+    # Create trainer
+    Path('logs').mkdir(exist_ok=True)
+    trainer = SOARTrainer(agent, env, output_dir='logs')
+
     print("Starting training...\n")
     try:
-        brain.train(
-            total_timesteps=args.timesteps,
-            learning_rate=args.learning_rate
-        )
+        trainer.train(total_timesteps=args.timesteps)
     except Exception as e:
         print(f"Error during training: {e}")
+        import traceback; traceback.print_exc()
         return 1
-    
+
     # Save model
     print(f"\nSaving model to {args.output}...")
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-    brain.save(args.output)
-    
+    agent.save(args.output)
+
     # Evaluate model
     print("\nEvaluating trained agent...")
-    metrics = brain.evaluate(num_episodes=5, deterministic=True)
+    metrics = trainer.evaluate(num_episodes=5)
     
     print("\nEvaluation Results:")
     print(f"  Mean Reward: {metrics.get('mean_reward', 0):.2f}")
