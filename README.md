@@ -11,6 +11,7 @@
 [![Flask](https://img.shields.io/badge/Flask-Dashboard-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![codecov](https://img.shields.io/badge/coverage-87%25-brightgreen?style=for-the-badge)](https://github.com/mervesudeboler/neural-soar/actions)
 
 <br/>
 
@@ -26,6 +27,12 @@
 ║          SELF-HEALING:                Container Isolation        ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
+
+<br/>
+
+![Neural SOAR Dashboard](docs/images/dashboard_screenshot.png)
+
+*Real-time dashboard showing live threat feed, agent actions, and security metrics*
 
 </div>
 
@@ -61,6 +68,12 @@ Classical SOAR platforms like Splunk SOAR or IBM QRadar SOAR operate on **If-Els
 *Training: 50,000 timesteps · 500 evaluation episodes · 11 attack profiles*
 
 **Key finding:** The agent independently learned that `REDIRECT_HONEYPOT` is more valuable than a plain block for low-severity threats — it yields a reward bonus and captures attacker TTPs that a rule-based system would discard.
+
+<br/>
+
+![PPO Training Results](docs/images/training_curve.png)
+
+*Training curves: PPO agent (blue) vs rule-based baseline (orange) across 1,000 episodes — reward, detection rate, false positive rate, and final performance comparison*
 
 ---
 
