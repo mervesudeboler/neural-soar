@@ -42,25 +42,25 @@ class RuleBasedAgent:
     def predict(self, observation: np.ndarray) -> Tuple[int, np.ndarray]:
         """
         Predict action using rule-based logic.
-        
+
         Args:
             observation: Observation vector of shape (12,)
-            
+
         Returns:
             Tuple of (action, action_probabilities)
         """
         # Extract observation components
         cpu_load = observation[0]
-        open_ports_norm = observation[1]
-        alert_severity = observation[2]
-        active_connections_norm = observation[3]
+        observation[1]
+        observation[2]
+        observation[3]
         attack_type_encoded = observation[4]
         trust_score = observation[5]
-        honeypot_active = observation[6]
-        banned_ips_norm = observation[7]
+        observation[6]
+        observation[7]
         failed_login_rate = observation[8]
-        connection_rate_norm = observation[9]
-        system_uptime_norm = observation[10]
+        observation[9]
+        observation[10]
         threat_level = observation[11]
 
         # Initialize action probabilities
@@ -122,7 +122,7 @@ class SOARAgent:
     def __init__(self, env, use_rule_based: bool = False):
         """
         Initialize SOAR Agent.
-        
+
         Args:
             env: Gymnasium environment
             use_rule_based: Force use of rule-based fallback if True
@@ -189,7 +189,7 @@ class SOARAgent:
     def train(self, env, total_timesteps: int = 100000) -> None:
         """
         Train the RL agent.
-        
+
         Args:
             env: Training environment
             total_timesteps: Total training timesteps
@@ -213,10 +213,10 @@ class SOARAgent:
     def predict(self, observation: np.ndarray) -> Tuple[int, np.ndarray]:
         """
         Predict action for given observation.
-        
+
         Args:
             observation: Observation vector of shape (12,)
-            
+
         Returns:
             Tuple of (action, action_probabilities)
         """
@@ -239,10 +239,10 @@ class SOARAgent:
     def _get_action_probabilities(self, observation: np.ndarray) -> np.ndarray:
         """
         Get action probability distribution from policy.
-        
+
         Args:
             observation: Observation vector
-            
+
         Returns:
             Action probability array
         """
@@ -262,10 +262,10 @@ class SOARAgent:
     def _fallback_predict(self, observation: np.ndarray) -> Tuple[int, np.ndarray]:
         """
         Fallback prediction using simple rules.
-        
+
         Args:
             observation: Observation vector
-            
+
         Returns:
             Tuple of (action, action_probabilities)
         """
@@ -286,7 +286,7 @@ class SOARAgent:
     def save(self, path: str) -> None:
         """
         Save agent model and metadata.
-        
+
         Args:
             path: Path to save model
         """
@@ -320,7 +320,7 @@ class SOARAgent:
     def load(self, path: str) -> None:
         """
         Load agent model and metadata.
-        
+
         Args:
             path: Path to load model from
         """
@@ -352,10 +352,10 @@ class SOARAgent:
     def get_action_name(self, action_id: int) -> str:
         """
         Get human-readable action name.
-        
+
         Args:
             action_id: Action ID (0-4)
-            
+
         Returns:
             Action name string
         """
@@ -364,7 +364,7 @@ class SOARAgent:
     def save_checkpoint(self, checkpoint_dir: str = "./checkpoints") -> None:
         """
         Save model checkpoint with numbered suffix.
-        
+
         Args:
             checkpoint_dir: Directory to save checkpoints
         """

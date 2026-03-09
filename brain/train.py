@@ -21,7 +21,7 @@ class SOARTrainer:
     def __init__(self, agent, env, output_dir: str = "./training_output"):
         """
         Initialize trainer.
-        
+
         Args:
             agent: SOARAgent instance
             env: SOAREnvironment instance
@@ -48,7 +48,7 @@ class SOARTrainer:
     def train(self, episodes: int = 500, timesteps_per_episode: int = 200) -> None:
         """
         Train agent for specified number of episodes.
-        
+
         Args:
             episodes: Number of episodes to train
             timesteps_per_episode: Max steps per episode (usually env.MAX_STEPS)
@@ -121,10 +121,10 @@ class SOARTrainer:
     def evaluate(self, n_episodes: int = 20) -> Tuple[float, float]:
         """
         Evaluate trained agent on n episodes.
-        
+
         Args:
             n_episodes: Number of evaluation episodes
-            
+
         Returns:
             Tuple of (mean_reward, std_reward)
         """
@@ -159,7 +159,7 @@ class SOARTrainer:
     def plot_training_curve(self, save_path: Optional[str] = None) -> None:
         """
         Plot training curve and save as image.
-        
+
         Args:
             save_path: Path to save plot (default: training_output/training_curve.png)
         """

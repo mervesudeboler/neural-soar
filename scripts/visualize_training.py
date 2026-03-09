@@ -11,7 +11,6 @@ import numpy as np
 
 try:
     import matplotlib.pyplot as plt
-    import matplotlib.dates as mdates
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False

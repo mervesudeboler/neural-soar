@@ -39,10 +39,9 @@ def main():
     # Load config
     try:
         with open(args.config, 'r') as f:
-            config = yaml.safe_load(f) or {}
+            yaml.safe_load(f) or {}
     except FileNotFoundError:
         print(f"Warning: Config not found at {args.config}, using defaults")
-        config = {}
 
     # Print training configuration
     print("Training Configuration:")
@@ -73,7 +72,8 @@ def main():
         agent.train(env, total_timesteps=args.timesteps)
     except Exception as e:
         print(f"Error during training: {e}")
-        import traceback; traceback.print_exc()
+        import traceback
+            traceback.print_exc()
         return 1
 
     # Save model
@@ -141,7 +141,7 @@ def main():
             fig, axes = plt.subplots(2, 2, figsize=(13, 8))
             fig.patch.set_facecolor('#0d1117')
             BLUE, GREEN, ORANGE = '#58a6ff', '#3fb950', '#d29922'
-            BG, PANEL, GRID = '#0d1117', '#161b22', '#21262d'
+            _BG, PANEL, GRID = '#0d1117', '#161b22', '#21262d'
             TEXT, MUTED = '#e6edf3', '#8b949e'
 
             def style(ax, title, xlabel, ylabel):

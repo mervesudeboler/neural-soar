@@ -147,7 +147,7 @@ def simulate_mode(config, args):
 
             while not done and step < 100:
                 # Collect sensor data
-                alerts = sensors.collect_alerts()
+                sensors.collect_alerts()
                 threat_level = sensors.get_threat_level()
 
                 # Get action from brain

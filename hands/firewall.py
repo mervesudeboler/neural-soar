@@ -170,7 +170,7 @@ class FirewallManager:
             else:
                 # iptables with limit module
                 rate_parts = rate.split("/")
-                rate_value = rate_parts[0] if rate_parts else "100"
+                rate_parts[0] if rate_parts else "100"
 
                 cmd = [
                     "iptables",

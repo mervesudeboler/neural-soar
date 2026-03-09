@@ -20,7 +20,7 @@ class SOARDashboard:
     def __init__(self, debug=False, demo_mode=True):
         """
         Initialize SOAR Dashboard.
-        
+
         Args:
             debug: Enable Flask debug mode
             demo_mode: Generate synthetic data if True
@@ -205,7 +205,7 @@ class SOARDashboard:
         self.actions.append(action)
         try:
             self.socketio.emit('new_action', action)
-        except:
+        except Exception:
             pass
 
     def update_state(self, state_data):
@@ -214,7 +214,7 @@ class SOARDashboard:
         self.state['timestamp'] = datetime.now().isoformat()
         try:
             self.socketio.emit('state_update', self.state)
-        except:
+        except Exception:
             pass
 
     def _generate_demo_data(self):
@@ -320,7 +320,7 @@ class SOARDashboard:
     def start(self, host='0.0.0.0', port=5000):
         """
         Start the SOAR Dashboard server.
-        
+
         Args:
             host: Server host address
             port: Server port
@@ -343,11 +343,11 @@ class SOARDashboard:
 def create_app(debug=False, demo_mode=True):
     """
     Factory function to create and configure SOAR Dashboard.
-    
+
     Args:
         debug: Enable debug mode
         demo_mode: Enable demo data generation
-        
+
     Returns:
         SOARDashboard instance
     """

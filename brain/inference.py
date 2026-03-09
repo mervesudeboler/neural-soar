@@ -36,7 +36,7 @@ class InferenceStatistics:
     def __init__(self, max_history: int = 1000):
         """
         Initialize statistics tracker.
-        
+
         Args:
             max_history: Maximum number of inferences to track
         """
@@ -50,7 +50,7 @@ class InferenceStatistics:
                         decision: InferenceResult) -> None:
         """
         Record an inference result.
-        
+
         Args:
             action_id: Action taken
             response_time_ms: Response time in milliseconds
@@ -64,7 +64,7 @@ class InferenceStatistics:
     def get_statistics(self) -> Dict[str, Any]:
         """
         Get current statistics.
-        
+
         Returns:
             Dictionary of statistics
         """
@@ -106,10 +106,10 @@ class RuleBasedInference:
     def run(self, observation: np.ndarray) -> Dict[str, Any]:
         """
         Run rule-based inference.
-        
+
         Args:
             observation: Observation vector
-            
+
         Returns:
             Inference result dict
         """
@@ -174,7 +174,7 @@ class SOARInference:
     def __init__(self, agent, model_path: Optional[str] = None):
         """
         Initialize inference engine.
-        
+
         Args:
             agent: SOARAgent instance
             model_path: Path to trained model (loads if provided)
@@ -210,10 +210,10 @@ class SOARInference:
     def run(self, observation: np.ndarray) -> Dict[str, Any]:
         """
         Run inference on observation.
-        
+
         Args:
             observation: Observation vector of shape (12,)
-            
+
         Returns:
             Dict with action_id, action_name, confidence, reasoning, response_time_ms
         """
@@ -287,12 +287,12 @@ class SOARInference:
                             interval_seconds: float = 1.0) -> threading.Thread:
         """
         Start live inference loop in background thread.
-        
+
         Args:
             state_manager: System state manager to get observations from
             action_engine: Optional callable to execute actions
             interval_seconds: Interval between inferences
-            
+
         Returns:
             Thread object (already started)
         """
@@ -344,10 +344,10 @@ class SOARInference:
     def explain_decision(self, observation: np.ndarray) -> str:
         """
         Explain why agent made a particular decision.
-        
+
         Args:
             observation: Observation vector
-            
+
         Returns:
             Human-readable explanation
         """
@@ -380,7 +380,7 @@ class SOARInference:
     def get_statistics(self) -> Dict[str, Any]:
         """
         Get inference statistics.
-        
+
         Returns:
             Dictionary of statistics
         """
@@ -391,7 +391,7 @@ class SOARInference:
     def save_decision_log(self, path: str) -> None:
         """
         Save decision log to JSON file.
-        
+
         Args:
             path: Path to save log
         """
@@ -440,10 +440,10 @@ class SOARInference:
     def _state_to_observation(state_manager: Any) -> np.ndarray:
         """
         Convert system state to observation vector.
-        
+
         Args:
             state_manager: System state manager
-            
+
         Returns:
             Observation vector
         """
@@ -475,12 +475,12 @@ class SOARInference:
                           action_probs: np.ndarray) -> str:
         """
         Generate human-readable reasoning for a decision.
-        
+
         Args:
             observation: Observation vector
             action: Action ID
             action_probs: Action probabilities
-            
+
         Returns:
             Reasoning string
         """

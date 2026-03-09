@@ -81,7 +81,7 @@ class SOAREnvironment(gym.Env):
     def __init__(self, state_manager: Optional[SimulatedStateManager] = None):
         """
         Initialize SOAR environment.
-        
+
         Args:
             state_manager: Optional state manager (uses SimulatedStateManager if None)
         """
@@ -124,11 +124,11 @@ class SOAREnvironment(gym.Env):
     def reset(self, seed: Optional[int] = None, **kwargs) -> Tuple[np.ndarray, Dict]:
         """
         Reset environment to initial state.
-        
+
         Args:
             seed: Random seed for reproducibility
             **kwargs: Additional gymnasium reset kwargs
-            
+
         Returns:
             Tuple of initial observation and info dict
         """
@@ -155,10 +155,10 @@ class SOAREnvironment(gym.Env):
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
         Execute one step in the environment.
-        
+
         Args:
             action: Action to take (0-4)
-            
+
         Returns:
             Tuple of (observation, reward, terminated, truncated, info)
         """
@@ -218,10 +218,10 @@ class SOAREnvironment(gym.Env):
     def render(self, mode: str = "human") -> Optional[str]:
         """
         Render current environment state.
-        
+
         Args:
             mode: Render mode ('human' for print)
-            
+
         Returns:
             String representation if mode != 'human'
         """
@@ -259,7 +259,7 @@ class SOAREnvironment(gym.Env):
     def _get_observation(self) -> np.ndarray:
         """
         Get normalized observation vector from current state.
-        
+
         Returns:
             Normalized observation array of shape (12,)
         """
@@ -346,11 +346,11 @@ class SOAREnvironment(gym.Env):
     def _calculate_reward(self, action: int, attack_type: int) -> float:
         """
         Calculate reward for an action given the current attack type.
-        
+
         Args:
             action: Action taken (0-4)
             attack_type: Current attack type (0-6)
-            
+
         Returns:
             Reward value
         """
@@ -401,7 +401,7 @@ class SOAREnvironment(gym.Env):
         """
         Update system state based on action taken.
         Simulates the effects of security responses.
-        
+
         Args:
             action: Action taken
         """

@@ -241,7 +241,7 @@ class LogSensor:
 
         if event_type == "failed_login":
             severity = 2
-            password = f"pass{random.randint(100, 999)}"
+            f"pass{random.randint(100, 999)}"
             source_ip = self._generate_random_ip()
             message = f"Failed password for {username} from {source_ip} port {random.randint(40000, 60000)} ssh2"
             raw_line = f"{datetime.now().strftime('%b %d %H:%M:%S')} {hostname} sshd[{random.randint(1000, 9999)}]: {message}"
