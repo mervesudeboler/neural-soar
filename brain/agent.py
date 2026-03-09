@@ -176,7 +176,6 @@ class SOARAgent:
                 n_epochs=self.hyperparams["n_epochs"],
                 gamma=self.hyperparams["gamma"],
                 gae_lambda=self.hyperparams["gae_lambda"],
-                tensorboard_log="./logs/tensorboard",
                 policy_kwargs={"net_arch": [256, 256, 128]},
                 verbose=1
             )
