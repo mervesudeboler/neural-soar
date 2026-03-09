@@ -203,8 +203,7 @@ class SOARAgent:
         try:
             self.model.learn(
                 total_timesteps=total_timesteps,
-                log_interval=10,
-                progress_bar=True
+                log_interval=10
             )
             logger.info("Training completed successfully")
         except Exception as e:
