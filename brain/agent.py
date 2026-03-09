@@ -162,14 +162,13 @@ class SOARAgent:
         """Initialize PPO model from Stable Baselines3."""
         try:
             from stable_baselines3 import PPO
-            from stable_baselines3.common.policies import MlpPolicy
-            
+
             # Create logs directory
             logs_dir = Path("./logs/tensorboard")
             logs_dir.mkdir(parents=True, exist_ok=True)
-            
+
             self.model = PPO(
-                MlpPolicy,
+                "MlpPolicy",
                 self.env,
                 learning_rate=self.hyperparams["learning_rate"],
                 n_steps=self.hyperparams["n_steps"],
@@ -182,7 +181,7 @@ class SOARAgent:
                 verbose=1
             )
             logger.info("PPO agent initialized successfully")
-            
+
         except ImportError:
             logger.warning("Stable Baselines3 not available, using RuleBasedAgent fallback")
             self.model = RuleBasedAgent()
