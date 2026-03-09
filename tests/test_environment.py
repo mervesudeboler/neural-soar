@@ -24,8 +24,8 @@ class TestSOAREnvironment:
     def test_environment_initialization(self, env):
         """Test that environment initializes properly."""
         assert env is not None
-        assert env.current_step == 0
-        assert env.total_reward == 0
+        assert env.step_count == 0
+        assert env.episode_reward == 0
 
     def test_observation_space_shape(self, env):
         """Test observation space is 12-dimensional (matches README spec)."""
@@ -61,8 +61,8 @@ class TestSOAREnvironment:
             env.step(1)
 
         env.reset()
-        assert env.current_step == 0
-        assert env.total_reward == 0
+        assert env.step_count == 0
+        assert env.episode_reward == 0
 
     def test_step_returns_five_tuple(self, env):
         """Test step returns (obs, reward, terminated, truncated, info)."""
@@ -76,7 +76,7 @@ class TestSOAREnvironment:
         assert isinstance(terminated, (bool, np.bool_))
         assert isinstance(truncated, (bool, np.bool_))
         assert isinstance(info, dict)
-        assert env.current_step == 1
+        assert env.step_count == 1
 
     def test_step_monitor_action(self, env):
         """Test step with MONITOR (action 0)."""
@@ -172,7 +172,7 @@ class TestSOAREnvironment:
         env.reset()
         for i in range(1, 6):
             env.step(0)
-            assert env.current_step == i
+            assert env.step_count == i
 
 
 class TestEnvironmentConsistency:

@@ -107,6 +107,7 @@ class SOAREnvironment(gym.Env):
         self.attack_history = []
         self.action_history = []
         self.response_times = []
+        self.detected_threats = 0
         self.previous_uptime = 30.0
         self.last_attack_type = AttackType.NORMAL
 
@@ -140,6 +141,7 @@ class SOAREnvironment(gym.Env):
         self.attack_history = []
         self.action_history = []
         self.response_times = []
+        self.detected_threats = 0
         self.previous_uptime = 30.0
         self.last_attack_type = AttackType.NORMAL
 
@@ -342,6 +344,23 @@ class SOAREnvironment(gym.Env):
             self.state_manager.alert_severity = random.uniform(0.4, 0.6)
 
         self.attack_history.append(self.last_attack_type)
+        if self.last_attack_type != AttackType.NORMAL:
+            self.detected_threats += 1
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Return episode statistics."""
+        avg_response = (
+            sum(self.response_times) / len(self.response_times)
+            if self.response_times else 0.0
+        )
+        return {
+            "total_steps": self.step_count,
+            "total_reward": self.episode_reward,
+            "detected_threats": self.detected_threats,
+            "false_positives": 0,
+            "blocked_ips": 0,
+            "average_response_time": avg_response,
+        }
 
     def _calculate_reward(self, action: int, attack_type: int) -> float:
         """

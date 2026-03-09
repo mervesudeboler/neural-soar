@@ -256,7 +256,7 @@ class TestHistoryAndStatistics:
         engine.execute_action(0, {"target_ip": "10.2.2.2"})
         stats = engine.get_action_statistics()
         assert "total_actions" in stats
-        assert "action_distribution" in stats
+        assert "actions_by_type" in stats
         assert "success_rate" in stats
 
     def test_get_recent_actions_default(self, engine):
@@ -296,16 +296,16 @@ class TestFirewallManager:
 
     def test_blocked_ip_is_tracked(self, firewall):
         firewall.block_ip("11.0.0.2", 3600)
-        assert firewall.is_blocked("11.0.0.2")
+        assert firewall.is_ip_blocked("11.0.0.2")
 
     def test_unblocked_ip_not_blocked(self, firewall):
-        assert not firewall.is_blocked("11.0.0.99")
+        assert not firewall.is_ip_blocked("11.0.0.99")
 
     def test_unblock_removes_ip(self, firewall):
         firewall.block_ip("11.0.0.3", 3600)
-        assert firewall.is_blocked("11.0.0.3")
+        assert firewall.is_ip_blocked("11.0.0.3")
         firewall.unblock_ip("11.0.0.3")
-        assert not firewall.is_blocked("11.0.0.3")
+        assert not firewall.is_ip_blocked("11.0.0.3")
 
     def test_get_blocked_ips_list(self, firewall):
         for i in range(3):
