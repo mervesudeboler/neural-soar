@@ -31,11 +31,11 @@ def main():
     parser.add_argument('--learning-rate', type=float, default=3e-4, help='Learning rate')
     parser.add_argument('--config', default='config/config.yaml', help='Config file')
     parser.add_argument('--output', default='brain/models/neural_soar_agent.zip', help='Output model path')
-    
+
     args = parser.parse_args()
-    
+
     print_banner()
-    
+
     # Load config
     try:
         with open(args.config, 'r') as f:
@@ -43,7 +43,7 @@ def main():
     except FileNotFoundError:
         print(f"Warning: Config not found at {args.config}, using defaults")
         config = {}
-    
+
     # Print training configuration
     print("Training Configuration:")
     print(f"  Episodes: {args.episodes}")
@@ -52,7 +52,7 @@ def main():
     print(f"  Output Model: {args.output}")
     print("  Algorithm: PPO")
     print("  Policy: MlpPolicy\n")
-    
+
     # Create environment
     print("Initializing environment...")
     env = SOAREnvironment()
@@ -106,14 +106,14 @@ def main():
     print("\nEvaluation Results (50 episodes after PPO training):")
     print(f"  Mean Reward: {mean_reward:.2f}")
     print(f"  Std Reward:  {std_reward:.2f}\n")
-    
+
     # Save metrics
     Path('logs').mkdir(exist_ok=True)
     metrics_file = 'logs/training_metrics.json'
     with open(metrics_file, 'w') as f:
         json.dump(metrics, f, indent=2)
     print(f"Metrics saved to {metrics_file}")
-    
+
     # Generate training curve from REAL episode data
     print("\nGenerating training visualization from real episode data...")
     try:
@@ -201,13 +201,13 @@ def main():
     except Exception as e:
         print(f"Error generating visualization: {e}")
         import traceback; traceback.print_exc()
-    
+
     print("\n" + "="*60)
     print("TRAINING COMPLETE")
     print("="*60)
     print(f"\nModel saved to: {args.output}")
     print("Run inference with: python scripts/run_simulation.py --mode simulate")
-    
+
     return 0
 
 

@@ -16,7 +16,7 @@ from flask_cors import CORS
 
 class SOARDashboard:
     """Dashboard wrapper for SOAR system visualization."""
-    
+
     def __init__(self, debug=False, demo_mode=True):
         """
         Initialize SOAR Dashboard.
@@ -31,7 +31,7 @@ class SOARDashboard:
         self.app.config['SECRET_KEY'] = 'neural-soar-secret-key-change-in-production'
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
         CORS(self.app)
-        
+
         # Data storage with maxlen limits
         self.events = deque(maxlen=200)
         self.actions = deque(maxlen=100)
@@ -44,7 +44,7 @@ class SOARDashboard:
             'system_status': 'OPERATIONAL',
             'total_events': 0,
         }
-        
+
         self.metrics = {
             'total_attacks': 0,
             'blocked_attacks': 0,
@@ -62,7 +62,7 @@ class SOARDashboard:
             },
             'response_times': deque(maxlen=60),
         }
-        
+
         self.training_stats = {
             'episodes': 0,
             'total_reward': 0.0,
@@ -70,19 +70,19 @@ class SOARDashboard:
             'epsilon': 0.1,
             'reward_history': deque(maxlen=100),
         }
-        
+
         self._setup_routes()
         self._setup_socketio()
         self._broadcast_thread = None
         self._running = False
-        
+
     def _setup_routes(self):
         """Setup Flask routes."""
-        
+
         @self.app.route('/')
         def index():
             return render_template('index.html')
-        
+
         @self.app.route('/api/state', methods=['GET'])
         def get_state():
             """Get current system state."""
@@ -92,7 +92,7 @@ class SOARDashboard:
                 return jsonify(state_copy), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/events', methods=['GET'])
         def get_events():
             """Get last 100 events."""
@@ -102,7 +102,7 @@ class SOARDashboard:
                 return jsonify({'events': events_list, 'count': len(events_list)}), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/metrics', methods=['GET'])
         def get_metrics():
             """Get metrics summary."""
@@ -113,7 +113,7 @@ class SOARDashboard:
                 return jsonify(metrics_copy), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/actions', methods=['GET'])
         def get_actions():
             """Get last 50 actions taken."""
@@ -123,7 +123,7 @@ class SOARDashboard:
                 return jsonify({'actions': actions_list, 'count': len(actions_list)}), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/training', methods=['GET'])
         def get_training():
             """Get training statistics."""
@@ -133,14 +133,14 @@ class SOARDashboard:
                 return jsonify(training_copy), 200
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-        
+
         @self.app.route('/api/simulate/attack', methods=['POST'])
         def simulate_attack():
             """Simulate an attack of specified type."""
             try:
                 data = request.get_json()
                 attack_type = data.get('attack_type', 'SQL_INJECTION')
-                
+
                 if self.demo_mode:
                     # Create event
                     event = {
@@ -154,12 +154,12 @@ class SOARDashboard:
                         'details': f'Simulated {attack_type} attack detected',
                     }
                     self.add_event(event)
-                    
+
                     # Update metrics
                     self.metrics['total_attacks'] += 1
                     if attack_type in self.metrics['attack_types']:
                         self.metrics['attack_types'][attack_type] += 1
-                    
+
                     # Create response action
                     action = {
                         'id': int(time.time() * 1000) % 1000000,
@@ -172,25 +172,25 @@ class SOARDashboard:
                     }
                     self.add_action(action)
                     self.metrics['blocked_attacks'] += 1
-                    
+
                     return jsonify({'success': True, 'event': event, 'action': action}), 200
                 else:
                     return jsonify({'error': 'Demo mode disabled'}), 400
-                    
+
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
-    
+
     def _setup_socketio(self):
         """Setup Socket.IO events."""
-        
+
         @self.socketio.on('connect')
         def handle_connect():
             emit('connection_response', {'status': 'connected'})
-        
+
         @self.socketio.on('disconnect')
         def handle_disconnect():
             pass
-    
+
     def add_event(self, event):
         """Add an event to the feed."""
         self.events.append(event)
@@ -199,7 +199,7 @@ class SOARDashboard:
             self.socketio.emit('new_event', event)
         except:
             pass
-    
+
     def add_action(self, action):
         """Add an action to the actions log."""
         self.actions.append(action)
@@ -207,7 +207,7 @@ class SOARDashboard:
             self.socketio.emit('new_action', action)
         except:
             pass
-    
+
     def update_state(self, state_data):
         """Update system state."""
         self.state.update(state_data)
@@ -216,18 +216,18 @@ class SOARDashboard:
             self.socketio.emit('state_update', self.state)
         except:
             pass
-    
+
     def _generate_demo_data(self):
         """Generate synthetic demo data."""
         attack_types = list(self.metrics['attack_types'].keys())
         action_types = ['MONITOR', 'RATE_LIMIT', 'BLOCK_IP', 'REDIRECT_HONEYPOT', 'ISOLATE_CONTAINER']
         severities = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-        
+
         # Simulate occasional attacks
         if random.random() < 0.3:  # 30% chance per broadcast
             attack_type = random.choice(attack_types)
             severity = random.choice(severities)
-            
+
             event = {
                 'id': int(time.time() * 1000) % 1000000,
                 'timestamp': datetime.now().isoformat(),
@@ -263,34 +263,34 @@ class SOARDashboard:
                     self.socketio.emit('new_action', action)
                 except Exception:
                     pass
-        
+
         # Update system metrics
         self.state['cpu_usage'] = 30 + random.gauss(0, 15)
         self.state['active_connections'] = max(50, int(128 + random.gauss(0, 30)))
         self.state['trust_score'] = max(0.5, min(1.0, self.state['trust_score'] + random.gauss(0, 0.02)))
-        
+
         # Update response times
         response_time = max(50, int(145 + random.gauss(0, 40)))
         self.metrics['response_times'].append(response_time)
         self.metrics['avg_response_time_ms'] = sum(self.metrics['response_times']) / len(self.metrics['response_times'])
-        
+
         # Update training stats
         self.training_stats['episodes'] += 1
         reward = random.gauss(0.5, 0.3)
         self.training_stats['reward_history'].append(reward)
         self.training_stats['total_reward'] += reward
         self.training_stats['avg_reward'] = self.training_stats['total_reward'] / max(1, self.training_stats['episodes'])
-        
+
         # Calculate security score
         self.metrics['security_score'] = max(50, min(100, 95 - (self.metrics['total_attacks'] * 0.1) + (self.training_stats['avg_reward'] * 5)))
-    
+
     def _broadcast_updates(self):
         """Broadcast state updates to connected clients."""
         while self._running:
             try:
                 if self.demo_mode:
                     self._generate_demo_data()
-                
+
                 # Broadcast current state
                 self.socketio.emit('state_update', {
                     'state': self.state,
@@ -311,12 +311,12 @@ class SOARDashboard:
                         'epsilon': self.training_stats['epsilon'],
                     },
                 })
-                
+
                 time.sleep(2)
             except Exception as e:
                 print(f"Broadcast error: {e}")
                 time.sleep(2)
-    
+
     def start(self, host='0.0.0.0', port=5000):
         """
         Start the SOAR Dashboard server.
@@ -326,15 +326,15 @@ class SOARDashboard:
             port: Server port
         """
         self._running = True
-        
+
         # Start background broadcast thread
         if self._broadcast_thread is None or not self._broadcast_thread.is_alive():
             self._broadcast_thread = Thread(target=self._broadcast_updates, daemon=True)
             self._broadcast_thread.start()
-        
+
         # Start Flask-SocketIO server
         self.socketio.run(self.app, host=host, port=port, debug=self.debug, allow_unsafe_werkzeug=True)
-    
+
     def stop(self):
         """Stop the dashboard server."""
         self._running = False
