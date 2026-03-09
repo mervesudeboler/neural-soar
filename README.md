@@ -428,6 +428,8 @@ Generates `training_visualization.png` with 4 panels: reward curve, action distr
 
 **Real PPO Training Results (50,000 timesteps):**
 
+![PPO Training Terminal](docs/images/training_terminal.jpeg)
+
 ![PPO Training Curve](docs/images/training_curve.png)
 
 *Episode reward, episode length, cumulative reward, and reward distribution — collected from 50 evaluation episodes after training.*
