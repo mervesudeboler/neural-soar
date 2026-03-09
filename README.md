@@ -97,6 +97,8 @@ Total time from step ① to step ⑩: **~31ms average**.
 
 ## 🏛️ System Architecture
 
+![Neural SOAR Architecture](docs/images/architecture.svg)
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          NEURAL SOAR                                │
