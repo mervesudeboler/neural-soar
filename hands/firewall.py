@@ -13,8 +13,8 @@ from typing import List, Dict, Optional
 class BlockRecord:
     """Record of an IP block."""
     ip: str
-    blocked_at: datetime = field(default_factory=datetime.utcnow)
     duration: int  # seconds
+    blocked_at: datetime = field(default_factory=datetime.utcnow)
     reason: str = "Security threat"
 
     def is_expired(self) -> bool:
