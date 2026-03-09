@@ -30,9 +30,12 @@
 
 <br/>
 
-![Neural SOAR Dashboard](docs/images/dashboard_screenshot.png)
+| | |
+|---|---|
+| ![](docs/images/soar1.jpeg) | ![](docs/images/soar2.jpeg) |
+| ![](docs/images/soar3.jpeg) | ![](docs/images/soar4.jpeg) |
 
-*Real-time dashboard showing live threat feed, agent actions, and security metrics*
+*Real-time dashboard — live threat feed, agent actions, security metrics, and RL training progress*
 
 </div>
 
