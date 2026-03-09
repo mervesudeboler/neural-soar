@@ -4,10 +4,9 @@ Supports both simulation and production modes (iptables/nftables).
 """
 import logging
 import subprocess
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Optional
 
 
 @dataclass

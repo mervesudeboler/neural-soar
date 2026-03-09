@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from brain.environment import SOAREnvironment
 from brain.agent import SOARAgent
-from brain.train import SOARTrainer
 import yaml
 
 
@@ -51,8 +50,8 @@ def main():
     print(f"  Total Timesteps: {args.timesteps}")
     print(f"  Learning Rate: {args.learning_rate}")
     print(f"  Output Model: {args.output}")
-    print(f"  Algorithm: PPO")
-    print(f"  Policy: MlpPolicy\n")
+    print("  Algorithm: PPO")
+    print("  Policy: MlpPolicy\n")
     
     # Create environment
     print("Initializing environment...")
@@ -207,7 +206,7 @@ def main():
     print("TRAINING COMPLETE")
     print("="*60)
     print(f"\nModel saved to: {args.output}")
-    print(f"Run inference with: python scripts/run_simulation.py --mode simulate")
+    print("Run inference with: python scripts/run_simulation.py --mode simulate")
     
     return 0
 

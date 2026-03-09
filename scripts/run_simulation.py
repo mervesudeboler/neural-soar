@@ -6,7 +6,6 @@ Runs training, simulation, dashboard, or full mode
 
 import argparse
 import sys
-import time
 import yaml
 import logging
 import signal
@@ -74,7 +73,7 @@ def train_mode(config, args):
     timesteps = args.timesteps or brain_config.get('total_timesteps', 100000)
     learning_rate = brain_config.get('learning_rate', 3e-4)
     
-    print(f"\nTraining Configuration:")
+    print("\nTraining Configuration:")
     print(f"  Total Timesteps: {timesteps}")
     print(f"  Learning Rate: {learning_rate}")
     print(f"  Algorithm: {brain_config.get('algorithm', 'PPO')}")
@@ -90,7 +89,7 @@ def train_mode(config, args):
         # Evaluate
         print("\nEvaluating trained model...")
         metrics = brain.evaluate(num_episodes=5)
-        print(f"Evaluation Results:")
+        print("Evaluation Results:")
         for key, value in metrics.items():
             print(f"  {key}: {value}")
         
@@ -127,7 +126,7 @@ def simulate_mode(config, args):
         brain.load(model_path)
         print(f"Loaded trained model from {model_path}")
     else:
-        print(f"No trained model found, using random actions")
+        print("No trained model found, using random actions")
     
     episodes = args.episodes or 5
     print(f"\nRunning {episodes} simulation episodes...\n")

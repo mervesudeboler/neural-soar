@@ -105,7 +105,6 @@ def cmd_train(args):
 def cmd_simulate(args):
     """Run full simulation with dashboard."""
     import threading
-    from brain.train import SOARTrainer
     from brain.inference import SOARInference
     from eyes.dashboard import SOARDashboard
 

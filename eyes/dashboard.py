@@ -3,15 +3,14 @@ Neural SOAR - Dashboard Flask Application
 Real-time visualization of SOAR system state, events, and autonomous actions.
 """
 
-import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import deque
 from threading import Thread
 import random
 
 from flask import Flask, render_template, jsonify, request
-from flask_socketio import SocketIO, emit, disconnect
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
 
@@ -256,7 +255,7 @@ class SOARDashboard:
                     'action_type': random.choice(action_types),
                     'target': event['source_ip'],
                     'status': 'SUCCESS',
-                    'details': f'Automatic defense activated',
+                    'details': 'Automatic defense activated',
                 }
                 self.actions.append(action)
                 self.metrics['blocked_attacks'] += 1

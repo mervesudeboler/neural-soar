@@ -8,7 +8,7 @@ import string
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Any
 
 
 @dataclass

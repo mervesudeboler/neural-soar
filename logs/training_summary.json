@@ -1,0 +1,12 @@
+{
+  "total_episodes": 127,
+  "total_time_seconds": 0.176977,
+  "total_steps": 25400,
+  "mean_episode_reward": -100.19133858267715,
+  "std_episode_reward": 57.98938950410328,
+  "min_reward": -265.8000000000007,
+  "max_reward": 41.70000000000009,
+  "best_mean_reward_window": -64.2049999999999,
+  "mean_episode_length": 200.0,
+  "mean_episode_time_seconds": 0.0013458503937007872
+}

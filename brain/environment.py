@@ -10,7 +10,7 @@ from typing import Tuple, Dict, Optional, Any
 import logging
 from enum import IntEnum
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +233,7 @@ class SOAREnvironment(gym.Env):
         output.append("="*60)
         output.append(f"Step: {self.step_count}/{self.MAX_STEPS}")
         output.append(f"Episode Reward: {self.episode_reward:.3f}")
-        output.append(f"\nSystem Metrics:")
+        output.append("\nSystem Metrics:")
         output.append(f"  CPU Load: {state['cpu_load']:.2%}")
         output.append(f"  Open Ports: {state['open_ports']}")
         output.append(f"  Alert Severity: {state['alert_severity']:.2%}")

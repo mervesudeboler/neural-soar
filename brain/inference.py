@@ -354,7 +354,7 @@ class SOARInference:
         result = self.run(observation)
         
         explanation = []
-        explanation.append(f"\nDecision Explanation")
+        explanation.append("\nDecision Explanation")
         explanation.append("=" * 50)
         explanation.append(f"Action: {result['action_name']}")
         explanation.append(f"Confidence: {result['confidence']:.2%}")
@@ -362,14 +362,14 @@ class SOARInference:
         explanation.append(f"\nReasoning: {result['reasoning']}")
         
         # Add feature analysis
-        explanation.append(f"\nObservation Analysis:")
+        explanation.append("\nObservation Analysis:")
         explanation.append(f"  CPU Load: {observation[0]:.2%}")
         explanation.append(f"  Alert Severity: {observation[2]:.2%}")
         explanation.append(f"  Threat Level: {observation[11]:.2%}")
         explanation.append(f"  Trust Score: {observation[5]:.2%}")
         explanation.append(f"  Failed Login Rate: {observation[8]:.2%}")
         
-        explanation.append(f"\nAction Probabilities:")
+        explanation.append("\nAction Probabilities:")
         for i, prob in enumerate(result['action_probabilities']):
             explanation.append(f"  {self.action_names[i]}: {prob:.2%}")
         
@@ -416,15 +416,15 @@ class SOARInference:
         output.append("="*60)
         output.append(f"Total Inferences: {stats['total_inferences']}")
         output.append(f"Total Logged Decisions: {stats['total_logged_decisions']}")
-        output.append(f"")
-        output.append(f"Latency Statistics:")
+        output.append("")
+        output.append("Latency Statistics:")
         output.append(f"  Average: {stats['avg_latency_ms']:.2f}ms")
         output.append(f"  Min: {stats['min_latency_ms']:.2f}ms")
         output.append(f"  Max: {stats['max_latency_ms']:.2f}ms")
         if 'std_latency_ms' in stats:
             output.append(f"  Std Dev: {stats['std_latency_ms']:.2f}ms")
-        output.append(f"")
-        output.append(f"Action Distribution:")
+        output.append("")
+        output.append("Action Distribution:")
         action_names = ["MONITOR", "RATE_LIMIT", "BLOCK_IP", "REDIRECT_HONEYPOT", "ISOLATE_CONTAINER"]
         for i, name in enumerate(action_names):
             count = stats['action_distribution'][i]
