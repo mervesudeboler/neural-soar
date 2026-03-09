@@ -426,6 +426,12 @@ python scripts/visualize_training.py
 
 Generates `training_visualization.png` with 4 panels: reward curve, action distribution, response latency percentiles, security score over time.
 
+**Real PPO Training Results (50,000 timesteps):**
+
+![PPO Training Curve](docs/images/training_curve.png)
+
+*Episode reward, episode length, cumulative reward, and reward distribution — collected from 50 evaluation episodes after training.*
+
 ---
 
 ## 📄 License
