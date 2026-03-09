@@ -72,12 +72,6 @@ Classical SOAR platforms like Splunk SOAR or IBM QRadar SOAR operate on **If-Els
 
 **Key finding:** The agent independently learned that `REDIRECT_HONEYPOT` is more valuable than a plain block for low-severity threats — it yields a reward bonus and captures attacker TTPs that a rule-based system would discard.
 
-<br/>
-
-![PPO Training Results](docs/images/training_curve.png)
-
-*Training curves: PPO agent (blue) vs rule-based baseline (orange) across 1,000 episodes — reward, detection rate, false positive rate, and final performance comparison*
-
 ---
 
 ## 🔄 Example Flow
