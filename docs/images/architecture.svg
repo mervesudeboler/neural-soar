@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" width="900" height="580">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .panel { fill: #161b22; stroke: #30363d; stroke-width: 1.5; rx: 8; }
+      .title { font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 700; }
+      .label { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 12px; fill: #8b949e; }
+      .sublabel { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 10px; fill: #6e7681; }
+      .component { font-family: 'Courier New', monospace; font-size: 11px; fill: #e6edf3; }
+      .arrow { stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-blue { stroke: #58a6ff; }
+      .arrow-green { stroke: #3fb950; }
+      .arrow-orange { stroke: #d29922; }
+      .arrow-purple { stroke: #a371f7; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#58a6ff"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3fb950"/>
+    </marker>
+    <marker id="arrowhead-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#d29922"/>
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#a371f7"/>
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="580" class="bg" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="36" text-anchor="middle" class="title" font-size="18" fill="#e6edf3">Neural SOAR — System Architecture</text>
+  <text x="450" y="54" text-anchor="middle" class="label" font-size="11">Sensors → Brain (PPO) → Hands → Eyes</text>
+  <line x1="60" y1="65" x2="840" y2="65" stroke="#21262d" stroke-width="1"/>
+
+  <!-- ═══════ LAYER 1: SENSORS ═══════ -->
+  <rect x="30" y="82" width="190" height="220" rx="8" fill="#161b22" stroke="#1f6feb" stroke-width="1.5"/>
+  <rect x="30" y="82" width="190" height="28" rx="8" fill="#1f6feb" opacity="0.3"/>
+  <rect x="30" y="96" width="190" height="14" fill="#1f6feb" opacity="0.3"/>
+  <text x="125" y="101" text-anchor="middle" class="title" font-size="12" fill="#58a6ff">📡  SENSORS</text>
+
+  <!-- NetworkSensor -->
+  <rect x="45" y="120" width="160" height="48" rx="5" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+  <text x="125" y="138" text-anchor="middle" class="component" fill="#58a6ff">NetworkSensor</text>
+  <text x="125" y="153" text-anchor="middle" class="sublabel">Suricata EVE JSON</text>
+  <text x="125" y="164" text-anchor="middle" class="sublabel">+ Simulator</text>
+
+  <!-- LogSensor -->
+  <rect x="45" y="178" width="160" height="48" rx="5" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+  <text x="125" y="196" text-anchor="middle" class="component" fill="#58a6ff">LogSensor</text>
+  <text x="125" y="211" text-anchor="middle" class="sublabel">auth.log / syslog</text>
+  <text x="125" y="222" text-anchor="middle" class="sublabel">+ Simulator</text>
+
+  <!-- SensorAggregator -->
+  <rect x="45" y="236" width="160" height="48" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+  <text x="125" y="254" text-anchor="middle" class="component" fill="#8b949e">SensorAggregator</text>
+  <text x="125" y="269" text-anchor="middle" class="sublabel">60% network + 40% auth</text>
+  <text x="125" y="280" text-anchor="middle" class="sublabel">→ threat_score [0,1]</text>
+
+  <!-- ═══════ LAYER 2: BRAIN ═══════ -->
+  <rect x="260" y="82" width="200" height="290" rx="8" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="260" y="82" width="200" height="28" rx="8" fill="#3fb950" opacity="0.2"/>
+  <rect x="260" y="96" width="200" height="14" fill="#3fb950" opacity="0.2"/>
+  <text x="360" y="101" text-anchor="middle" class="title" font-size="12" fill="#3fb950">🧠  BRAIN (RL)</text>
+
+  <!-- SOAREnvironment -->
+  <rect x="275" y="120" width="170" height="70" rx="5" fill="#0d1117" stroke="#3fb950" stroke-width="1"/>
+  <text x="360" y="140" text-anchor="middle" class="component" fill="#3fb950">SOAREnvironment</text>
+  <text x="360" y="155" text-anchor="middle" class="sublabel">Gymnasium • 12-dim obs</text>
+  <text x="360" y="166" text-anchor="middle" class="sublabel">5 discrete actions</text>
+  <text x="360" y="177" text-anchor="middle" class="sublabel">Reward fn: R_action + R_latency</text>
+
+  <!-- PPO Agent -->
+  <rect x="275" y="204" width="170" height="58" rx="5" fill="#0d1117" stroke="#3fb950" stroke-width="1.5" filter="url(#glow)"/>
+  <text x="360" y="225" text-anchor="middle" class="title" font-size="13" fill="#3fb950">PPO Agent</text>
+  <text x="360" y="241" text-anchor="middle" class="sublabel">Stable Baselines3</text>
+  <text x="360" y="252" text-anchor="middle" class="sublabel">MlpPolicy • 64×64 hidden</text>
+
+  <!-- Trainer / Inference -->
+  <rect x="275" y="274" width="80" height="42" rx="5" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+  <text x="315" y="291" text-anchor="middle" class="component" font-size="10" fill="#8b949e">SOARTrainer</text>
+  <text x="315" y="305" text-anchor="middle" class="sublabel">train.py</text>
+
+  <rect x="365" y="274" width="80" height="42" rx="5" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+  <text x="405" y="291" text-anchor="middle" class="component" font-size="10" fill="#8b949e">Inference</text>
+  <text x="405" y="305" text-anchor="middle" class="sublabel">live decisions</text>
+
+  <!-- ═══════ LAYER 3: HANDS ═══════ -->
+  <rect x="500" y="82" width="190" height="290" rx="8" fill="#161b22" stroke="#f85149" stroke-width="1.5"/>
+  <rect x="500" y="82" width="190" height="28" rx="8" fill="#f85149" opacity="0.2"/>
+  <rect x="500" y="96" width="190" height="14" fill="#f85149" opacity="0.2"/>
+  <text x="595" y="101" text-anchor="middle" class="title" font-size="12" fill="#f85149">✋  HANDS (ACTIONS)</text>
+
+  <!-- ActionEngine -->
+  <rect x="515" y="120" width="160" height="40" rx="5" fill="#0d1117" stroke="#f85149" stroke-width="1"/>
+  <text x="595" y="137" text-anchor="middle" class="component" fill="#f85149">ActionEngine</text>
+  <text x="595" y="151" text-anchor="middle" class="sublabel">central dispatcher</text>
+
+  <!-- 5 actions -->
+  <rect x="515" y="172" width="160" height="30" rx="4" fill="#0d1117" stroke="#21262d"/>
+  <text x="595" y="192" text-anchor="middle" class="component" font-size="10" fill="#3fb950">0  MONITOR</text>
+
+  <rect x="515" y="208" width="160" height="30" rx="4" fill="#0d1117" stroke="#21262d"/>
+  <text x="595" y="228" text-anchor="middle" class="component" font-size="10" fill="#d29922">1  RATE_LIMIT</text>
+
+  <rect x="515" y="244" width="160" height="30" rx="4" fill="#0d1117" stroke="#21262d"/>
+  <text x="595" y="264" text-anchor="middle" class="component" font-size="10" fill="#f85149">2  BLOCK_IP</text>
+
+  <rect x="515" y="280" width="160" height="30" rx="4" fill="#0d1117" stroke="#21262d"/>
+  <text x="595" y="300" text-anchor="middle" class="component" font-size="10" fill="#58a6ff">3  REDIRECT_HONEYPOT ⭐</text>
+
+  <rect x="515" y="316" width="160" height="30" rx="4" fill="#0d1117" stroke="#21262d"/>
+  <text x="595" y="336" text-anchor="middle" class="component" font-size="10" fill="#a371f7">4  ISOLATE_CONTAINER</text>
+
+  <!-- ═══════ LAYER 4: EYES ═══════ -->
+  <rect x="730" y="82" width="150" height="290" rx="8" fill="#161b22" stroke="#d29922" stroke-width="1.5"/>
+  <rect x="730" y="82" width="150" height="28" rx="8" fill="#d29922" opacity="0.2"/>
+  <rect x="730" y="96" width="150" height="14" fill="#d29922" opacity="0.2"/>
+  <text x="805" y="101" text-anchor="middle" class="title" font-size="12" fill="#d29922">👁  EYES</text>
+
+  <rect x="745" y="120" width="120" height="40" rx="5" fill="#0d1117" stroke="#d29922" stroke-width="1"/>
+  <text x="805" y="137" text-anchor="middle" class="component" fill="#d29922">Flask + SocketIO</text>
+  <text x="805" y="151" text-anchor="middle" class="sublabel">port 8080</text>
+
+  <rect x="745" y="172" width="120" height="35" rx="5" fill="#0d1117" stroke="#21262d"/>
+  <text x="805" y="188" text-anchor="middle" class="sublabel">Live Threat Feed</text>
+  <text x="805" y="200" text-anchor="middle" class="sublabel">Chart.js visuals</text>
+
+  <rect x="745" y="218" width="120" height="35" rx="5" fill="#0d1117" stroke="#21262d"/>
+  <text x="805" y="234" text-anchor="middle" class="sublabel">Security Metrics</text>
+  <text x="805" y="246" text-anchor="middle" class="sublabel">Agent Status</text>
+
+  <rect x="745" y="264" width="120" height="35" rx="5" fill="#0d1117" stroke="#21262d"/>
+  <text x="805" y="280" text-anchor="middle" class="sublabel">RL Training</text>
+  <text x="805" y="292" text-anchor="middle" class="sublabel">Progress (live)</text>
+
+  <rect x="745" y="310" width="120" height="35" rx="5" fill="#0d1117" stroke="#21262d"/>
+  <text x="805" y="326" text-anchor="middle" class="sublabel">WebSocket</text>
+  <text x="805" y="338" text-anchor="middle" class="sublabel">real-time broadcast</text>
+
+  <!-- ═══════ CORE / EVENT BUS ═══════ -->
+  <rect x="260" y="400" width="440" height="70" rx="8" fill="#161b22" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="480" y="422" text-anchor="middle" class="title" font-size="12" fill="#a371f7">⚙  CORE INFRASTRUCTURE</text>
+  <text x="330" y="448" text-anchor="middle" class="component" font-size="11" fill="#8b949e">EventBus</text>
+  <text x="330" y="461" text-anchor="middle" class="sublabel">Redis / In-Memory</text>
+  <text x="480" y="448" text-anchor="middle" class="component" font-size="11" fill="#8b949e">StateManager</text>
+  <text x="480" y="461" text-anchor="middle" class="sublabel">thread-safe</text>
+  <text x="630" y="448" text-anchor="middle" class="component" font-size="11" fill="#8b949e">MetricsCollector</text>
+  <text x="630" y="461" text-anchor="middle" class="sublabel">prometheus / JSON</text>
+
+  <!-- ═══════ SIMULATOR ═══════ -->
+  <rect x="30" y="400" width="190" height="70" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1.5"/>
+  <text x="125" y="422" text-anchor="middle" class="title" font-size="12" fill="#8b949e">💥  SIMULATOR</text>
+  <text x="125" y="445" text-anchor="middle" class="component" font-size="11" fill="#6e7681">11 attack profiles</text>
+  <text x="125" y="460" text-anchor="middle" class="sublabel">DDoS · SQLi · BruteForce</text>
+  <text x="125" y="472" text-anchor="middle" class="sublabel">PortScan · Malware · ...</text>
+
+  <!-- ═══════ ARROWS ═══════ -->
+  <!-- Sensors → Brain -->
+  <path d="M220 200 L260 200" class="arrow arrow-blue" marker-end="url(#arrowhead)"/>
+  <text x="240" y="193" text-anchor="middle" class="sublabel" font-size="9" fill="#58a6ff">obs</text>
+
+  <!-- Brain → Hands -->
+  <path d="M460 230 L500 230" class="arrow" stroke="#3fb950" marker-end="url(#arrowhead-green)"/>
+  <text x="480" y="223" text-anchor="middle" class="sublabel" font-size="9" fill="#3fb950">action</text>
+
+  <!-- Hands → Eyes -->
+  <path d="M690 230 L730 230" class="arrow" stroke="#d29922" marker-end="url(#arrowhead-orange)"/>
+  <text x="710" y="223" text-anchor="middle" class="sublabel" font-size="9" fill="#d29922">event</text>
+
+  <!-- Brain ↕ Core -->
+  <path d="M360 372 L360 400" class="arrow" stroke="#a371f7" marker-end="url(#arrowhead-purple)"/>
+
+  <!-- Hands ↕ Core -->
+  <path d="M595 372 L595 400" class="arrow" stroke="#a371f7" marker-end="url(#arrowhead-purple)"/>
+
+  <!-- Eyes ↕ Core -->
+  <path d="M730 350 L730 435 L700 435" class="arrow" stroke="#a371f7" marker-end="url(#arrowhead-purple)"/>
+
+  <!-- Simulator → Sensors -->
+  <path d="M125 400 L125 302" class="arrow" stroke="#6e7681" marker-end="url(#arrowhead)"/>
+  <text x="108" y="355" text-anchor="middle" class="sublabel" font-size="9" fill="#6e7681">sim</text>
+
+  <!-- Reward feedback -->
+  <path d="M460 155 Q500 130 500 130" stroke="#3fb950" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+  <text x="490" y="124" text-anchor="middle" class="sublabel" font-size="9" fill="#3fb950">reward</text>
+
+  <!-- ═══════ LEGEND ═══════ -->
+  <rect x="30" y="490" width="840" height="70" rx="6" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+  <text x="450" y="510" text-anchor="middle" class="label" font-size="10" fill="#6e7681">DATA FLOW</text>
+  <line x1="60" y1="520" x2="100" y2="520" stroke="#58a6ff" stroke-width="2"/>
+  <text x="108" y="524" class="sublabel" font-size="10" fill="#8b949e">Observation (12-dim)</text>
+  <line x1="210" y1="520" x2="250" y2="520" stroke="#3fb950" stroke-width="2"/>
+  <text x="258" y="524" class="sublabel" font-size="10" fill="#8b949e">Action (0–4)</text>
+  <line x1="340" y1="520" x2="380" y2="520" stroke="#d29922" stroke-width="2"/>
+  <text x="388" y="524" class="sublabel" font-size="10" fill="#8b949e">Event / Metrics</text>
+  <line x1="480" y1="520" x2="520" y2="520" stroke="#a371f7" stroke-width="2"/>
+  <text x="528" y="524" class="sublabel" font-size="10" fill="#8b949e">EventBus (Redis)</text>
+  <line x1="630" y1="520" x2="670" y2="520" stroke="#6e7681" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="678" y="524" class="sublabel" font-size="10" fill="#8b949e">Simulation data</text>
+
+  <text x="450" y="548" text-anchor="middle" class="sublabel" font-size="10" fill="#6e7681">⭐ REDIRECT_HONEYPOT yields highest reward (+2.0) — agent learns this strategy autonomously without human rules</text>
+</svg>

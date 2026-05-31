@@ -1,0 +1,6 @@
+{
+  "mean_reward": 358.6759999999989,
+  "std_reward": 28.070230209244688,
+  "episodes": 50,
+  "timesteps": 50000
+}

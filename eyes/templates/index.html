@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEURAL SOAR - Autonomous Security Dashboard</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-dark: #0a0e27;
+            --secondary-dark: #1a1f3a;
+            --accent-green: #00ff41;
+            --accent-cyan: #00bfff;
+            --danger-red: #ff1744;
+            --warning-orange: #ff9100;
+            --warning-yellow: #ffd600;
+            --success-green: #4caf50;
+            --border-color: #2a3f5f;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #0f1431 100%);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(90deg, var(--secondary-dark), var(--primary-dark));
+            border-bottom: 2px solid var(--accent-green);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 255, 65, 0.15);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent-green);
+            text-shadow: 0 0 10px var(--accent-green);
+            letter-spacing: 2px;
+        }
+
+        .logo-subtext {
+            font-size: 11px;
+            color: var(--accent-cyan);
+            letter-spacing: 1px;
+            margin-top: -5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .live-clock {
+            font-size: 14px;
+            color: var(--accent-cyan);
+            font-family: monospace;
+            min-width: 200px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--success-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px var(--success-green);
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: var(--success-green);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 10px var(--success-green);
+            }
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 20px var(--success-green);
+            }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: var(--secondary-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-green);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: '▶';
+            font-size: 12px;
+            color: var(--accent-cyan);
+        }
+
+        /* System State Panel */
+        .state-item {
+            margin-bottom: 15px;
+        }
+
+        .state-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .state-value {
+            font-size: 20px;
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        .gauge-container {
+            width: 100%;
+            height: 8px;
+            background: var(--primary-dark);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .gauge-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-green), var(--accent-cyan));
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .threat-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .threat-critical {
+            background: rgba(255, 23, 68, 0.2);
+            color: var(--danger-red);
+            border: 1px solid var(--danger-red);
+        }
+
+        .threat-high {
+            background: rgba(255, 145, 0, 0.2);
+            color: var(--warning-orange);
+            border: 1px solid var(--warning-orange);
+        }
+
+        .threat-medium {
+            background: rgba(255, 214, 0, 0.2);
+            color: var(--warning-yellow);
+            border: 1px solid var(--warning-yellow);
+        }
+
+        .threat-low {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success-green);
+            border: 1px solid var(--success-green);
+        }
+
+        /* Events Feed */
+        .events-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .event-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-item:hover {
+            background: rgba(0, 191, 255, 0.1);
+            padding-left: 16px;
+        }
+
+        .event-time {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .event-type {
+            color: var(--accent-cyan);
+            font-weight: bold;
+            margin-top: 3px;
+        }
+
+        .event-details {
+            color: var(--text-secondary);
+            margin-top: 3px;
+            font-size: 11px;
+        }
+
+        .severity-critical {
+            color: var(--danger-red);
+            border-left: 3px solid var(--danger-red);
+            padding-left: 12px;
+        }
+
+        .severity-high {
+            color: var(--warning-orange);
+            border-left: 3px solid var(--warning-orange);
+            padding-left: 12px;
+        }
+
+        .severity-medium {
+            color: var(--warning-yellow);
+            border-left: 3px solid var(--warning-yellow);
+            padding-left: 12px;
+        }
+
+        .severity-low {
+            color: var(--success-green);
+            border-left: 3px solid var(--success-green);
+            padding-left: 12px;
+        }
+
+        /* Actions Table */
+        .actions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: block;
+        }
+
+        .actions-table thead {
+            display: block;
+            background: rgba(0, 191, 255, 0.1);
+        }
+
+        .actions-table tbody {
+            display: block;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .actions-table tr {
+            display: table;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .actions-table th {
+            padding: 10px;
+            text-align: left;
+            color: var(--accent-cyan);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .actions-table td {
+            padding: 10px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .actions-table td:last-child {
+            border-right: none;
+        }
+
+        .action-type-monitor {
+            color: var(--accent-cyan);
+        }
+
+        .action-type-rate-limit {
+            color: var(--warning-yellow);
+        }
+
+        .action-type-block-ip {
+            color: var(--warning-orange);
+        }
+
+        .action-type-redirect {
+            color: var(--accent-green);
+        }
+
+        .action-type-isolate {
+            color: var(--danger-red);
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 10px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .metric-card {
+            background: rgba(0, 191, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-card:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 191, 255, 0.1);
+        }
+
+        .metric-value {
+            font-size: 24px;
+            color: var(--accent-green);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--primary-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-green);
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: var(--secondary-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .connection-connected {
+            background: var(--success-green);
+            box-shadow: 0 0 8px var(--success-green);
+        }
+
+        .connection-disconnected {
+            background: var(--danger-red);
+            box-shadow: 0 0 8px var(--danger-red);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .header-right {
+                flex-direction: column;
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div>
+                <div class="logo">⚡ NEURAL SOAR</div>
+                <div class="logo-subtext">AUTONOMOUS SECURITY RESPONSE SYSTEM</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="live-clock" id="liveClock">--:--:-- --</div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <div class="status-text" id="statusText">OPERATIONAL</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- System State Panel -->
+            <div class="panel">
+                <div class="panel-title">System State</div>
+                
+                <div class="state-item">
+                    <div class="state-label">CPU Usage</div>
+                    <div class="state-value" id="cpuValue">--</div>
+                    <div class="gauge-container">
+                        <div class="gauge-fill" id="cpuGauge"></div>
+                    </div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-label">Active Connections</div>
+                    <div class="state-value" id="connectionsValue">--</div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-label">Trust Score</div>
+                    <div class="state-value" id="trustScoreValue">--</div>
+                    <div class="gauge-container">
+                        <div class="gauge-fill" id="trustGauge"></div>
+                    </div>
+                </div>
+
+                <div class="state-item">
+                    <div class="state-label">Threat Level</div>
+                    <div id="threatBadge" class="threat-badge threat-low">LOW</div>
+                </div>
+            </div>
+
+            <!-- Live Events Feed -->
+            <div class="panel">
+                <div class="panel-title">Live Events Feed</div>
+                <div class="events-feed" id="eventsFeed">
+                    <div class="event-item" style="color: var(--text-secondary); padding: 20px; text-align: center;">
+                        Waiting for events...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Actions -->
+            <div class="panel full-width">
+                <div class="panel-title">Agent Actions</div>
+                <div style="overflow-x: auto;">
+                    <table class="actions-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%">Timestamp</th>
+                                <th style="width: 20%">Action Type</th>
+                                <th style="width: 20%">Target</th>
+                                <th style="width: 20%">Status</th>
+                                <th style="width: 20%">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="actionsTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-secondary);">No actions yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attack Distribution Chart -->
+            <div class="panel">
+                <div class="panel-title">Attack Distribution</div>
+                <div class="chart-container">
+                    <canvas id="attackChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Response Latency Chart -->
+            <div class="panel">
+                <div class="panel-title">Response Latency</div>
+                <div class="chart-container">
+                    <canvas id="latencyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Security Metrics -->
+            <div class="panel">
+                <div class="panel-title">Security Metrics</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalAttacksMetric">0</div>
+                        <div class="metric-label">Total Attacks</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="blockedAttacksMetric">0</div>
+                        <div class="metric-label">Blocked</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="honeypotMetric">0</div>
+                        <div class="metric-label">Honeypot Redirects</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="securityScoreMetric">95.5</div>
+                        <div class="metric-label">Security Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="falsePositiveMetric">0.02</div>
+                        <div class="metric-label">False Positive Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avgResponseMetric">145</div>
+                        <div class="metric-label">Avg Response (ms)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reward Curve Chart -->
+            <div class="panel full-width">
+                <div class="panel-title">RL Training Progress - Reward Curve</div>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="rewardChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status">
+        <div class="connection-dot connection-disconnected" id="connectionDot"></div>
+        <span id="connectionStatus">Connecting...</span>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Global variables
+        let socket = null;
+        let charts = {};
+        let lastUpdate = Date.now();
+        let isConnected = false;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeClock();
+            initializeCharts();
+            connectWebSocket();
+            setupPollingFallback();
+            setupSimulateButton();
+        });
+
+        // Live clock
+        function initializeClock() {
+            function updateClock() {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
+                const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                document.getElementById('liveClock').textContent = timeStr + ' ' + dateStr;
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        // WebSocket connection
+        function connectWebSocket() {
+            socket = io.connect(window.location.origin);
+
+            socket.on('connect', function() {
+                isConnected = true;
+                updateConnectionStatus(true);
+            });
+
+            socket.on('disconnect', function() {
+                isConnected = false;
+                updateConnectionStatus(false);
+            });
+
+            socket.on('new_event', function(event) {
+                addEventToFeed(event);
+            });
+
+            socket.on('new_action', function(action) {
+                addActionToTable(action);
+            });
+
+            socket.on('state_update', function(data) {
+                updateSystemState(data.state, data.metrics, data.training);
+            });
+
+            socket.on('error', function(error) {
+                console.error('Socket error:', error);
+            });
+        }
+
+        // Polling fallback
+        function setupPollingFallback() {
+            setInterval(function() {
+                if (!isConnected) {
+                    fetch('/api/state')
+                        .then(r => r.json())
+                        .then(state => {
+                            fetch('/api/metrics')
+                                .then(r => r.json())
+                                .then(metrics => {
+                                    fetch('/api/training')
+                                        .then(r => r.json())
+                                        .then(training => {
+                                            updateSystemState(state, metrics, training);
+                                        });
+                                });
+                        })
+                        .catch(e => console.error('Polling error:', e));
+                }
+            }, 2000);
+        }
+
+        // Update system state
+        function updateSystemState(state, metrics, training) {
+            if (!state || !metrics) return;
+
+            // Update CPU
+            const cpu = parseFloat(state.cpu_usage || 45);
+            document.getElementById('cpuValue').textContent = cpu.toFixed(1) + '%';
+            document.getElementById('cpuGauge').style.width = Math.min(100, cpu) + '%';
+
+            // Update connections
+            const connections = parseInt(state.active_connections || 128);
+            document.getElementById('connectionsValue').textContent = connections.toString();
+
+            // Update trust score
+            const trust = parseFloat(state.trust_score || 0.92);
+            document.getElementById('trustScoreValue').textContent = (trust * 100).toFixed(1) + '%';
+            document.getElementById('trustGauge').style.width = (trust * 100) + '%';
+
+            // Update threat level
+            const threatLevel = state.threat_level || 'MEDIUM';
+            const threatBadge = document.getElementById('threatBadge');
+            threatBadge.textContent = threatLevel;
+            threatBadge.className = 'threat-badge threat-' + threatLevel.toLowerCase();
+
+            // Update metrics
+            if (metrics) {
+                document.getElementById('totalAttacksMetric').textContent = metrics.total_attacks || 0;
+                document.getElementById('blockedAttacksMetric').textContent = metrics.blocked_attacks || 0;
+                document.getElementById('honeypotMetric').textContent = metrics.honeypot_redirects || 0;
+                document.getElementById('securityScoreMetric').textContent = (metrics.security_score || 95.5).toFixed(1);
+                document.getElementById('falsePositiveMetric').textContent = (metrics.false_positive_rate || 0.02).toFixed(2);
+                document.getElementById('avgResponseMetric').textContent = Math.round(metrics.avg_response_time_ms || 145);
+
+                // Update attack distribution chart
+                if (metrics.attack_types) {
+                    updateAttackChart(metrics.attack_types);
+                }
+
+                // Update latency chart
+                if (metrics.response_times && metrics.response_times.length > 0) {
+                    updateLatencyChart(metrics.response_times);
+                }
+            }
+
+            // Update training chart
+            if (training && training.reward_history) {
+                updateRewardChart(training.reward_history);
+            }
+        }
+
+        // Add event to feed
+        function addEventToFeed(event) {
+            const feed = document.getElementById('eventsFeed');
+            
+            // Clear placeholder if needed
+            if (feed.children.length === 1 && feed.children[0].textContent.includes('Waiting')) {
+                feed.innerHTML = '';
+            }
+
+            const eventEl = document.createElement('div');
+            eventEl.className = 'event-item severity-' + (event.severity || 'medium').toLowerCase();
+            
+            const time = formatTimestamp(event.timestamp);
+            const attackType = event.attack_type || event.type || 'UNKNOWN';
+            
+            eventEl.innerHTML = `
+                <div class="event-time">${time}</div>
+                <div class="event-type">${attackType}</div>
+                <div class="event-details">From: ${event.source_ip || 'N/A'} → ${event.target_endpoint || 'N/A'}</div>
+            `;
+            
+            feed.insertBefore(eventEl, feed.firstChild);
+            
+            // Keep only last 20 visible
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Add action to table
+        function addActionToTable(action) {
+            const tbody = document.getElementById('actionsTableBody');
+            
+            // Clear placeholder if needed
+            if (tbody.children.length === 1 && tbody.children[0].textContent.includes('No actions')) {
+                tbody.innerHTML = '';
+            }
+
+            const row = document.createElement('tr');
+            const actionType = (action.action_type || 'MONITOR').replace('_', ' ');
+            const actionClass = 'action-type-' + (action.action_type || 'MONITOR').toLowerCase().replace('_', '-');
+            
+            row.innerHTML = `
+                <td>${formatTimestamp(action.timestamp)}</td>
+                <td class="${actionClass}">${actionType}</td>
+                <td>${action.target || 'N/A'}</td>
+                <td>${action.status || 'UNKNOWN'}</td>
+                <td>${action.details || ''}</td>
+            `;
+            
+            tbody.insertBefore(row, tbody.firstChild);
+            
+            // Keep only last 20 visible
+            while (tbody.children.length > 20) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        // Format timestamp
+        function formatTimestamp(ts) {
+            if (!ts) return '--:--';
+            const date = new Date(ts);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('connectionDot');
+            const status = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                dot.className = 'connection-dot connection-connected';
+                status.textContent = 'WebSocket Connected';
+            } else {
+                dot.className = 'connection-dot connection-disconnected';
+                status.textContent = 'Polling Fallback';
+            }
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'rgba(224, 224, 224, 0.8)',
+                            font: { family: "'Courier New', monospace", size: 11 }
+                        }
+                    }
+                }
+            };
+
+            // Attack Distribution Chart
+            const attackCtx = document.getElementById('attackChart').getContext('2d');
+            charts.attack = new Chart(attackCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SQL Injection', 'XSS', 'DDoS', 'Brute Force', 'Malware', 'Reconnaissance'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            '#ff1744', '#ff9100', '#ffd600', '#4caf50', '#00bfff', '#00ff41'
+                        ],
+                        borderColor: '#1a1f3a',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Response Latency Chart
+            const latencyCtx = document.getElementById('latencyChart').getContext('2d');
+            charts.latency = new Chart(latencyCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Response Time (ms)',
+                        data: [],
+                        borderColor: '#00bfff',
+                        backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#00ff41',
+                        pointBorderColor: '#00bfff',
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 500,
+                            ticks: { color: 'rgba(224, 224, 224, 0.6)', font: { size: 10 } },
+                            grid: { color: 'rgba(42, 63, 95, 0.5)' }
+                        },
+                        x: {
+                            ticks: { color: 'rgba(224, 224, 224, 0.6)', font: { size: 10 } },
+                            grid: { color: 'rgba(42, 63, 95, 0.5)' }
+                        }
+                    }
+                }
+            });
+
+            // Reward Curve Chart
+            const rewardCtx = document.getElementById('rewardChart').getContext('2d');
+            charts.reward = new Chart(rewardCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Average Reward',
+                        data: [],
+                        borderColor: '#00ff41',
+                        backgroundColor: 'rgba(0, 255, 65, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00bfff',
+                        pointBorderColor: '#00ff41',
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        y: {
+                            min: -1,
+                            max: 1,
+                            ticks: { color: 'rgba(224, 224, 224, 0.6)', font: { size: 10 } },
+                            grid: { color: 'rgba(42, 63, 95, 0.5)' }
+                        },
+                        x: {
+                            ticks: { color: 'rgba(224, 224, 224, 0.6)', font: { size: 10 } },
+                            grid: { color: 'rgba(42, 63, 95, 0.5)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update attack chart
+        function updateAttackChart(attackTypes) {
+            const types = ['SQL_INJECTION', 'XSS', 'DDoS', 'BRUTE_FORCE', 'MALWARE', 'RECONNAISSANCE'];
+            const data = types.map(t => attackTypes[t] || 0);
+            charts.attack.data.datasets[0].data = data;
+            charts.attack.update('none');
+        }
+
+        // Update latency chart
+        function updateLatencyChart(responseTimes) {
+            const chart = charts.latency;
+            chart.data.labels = Array.from({length: responseTimes.length}, (_, i) => i);
+            chart.data.datasets[0].data = responseTimes;
+            chart.update('none');
+        }
+
+        // Update reward chart
+        function updateRewardChart(rewardHistory) {
+            const chart = charts.reward;
+            chart.data.labels = Array.from({length: rewardHistory.length}, (_, i) => i);
+            chart.data.datasets[0].data = rewardHistory;
+            chart.update('none');
+        }
+
+        // Setup simulate button
+        function setupSimulateButton() {
+            // Add simulate button to header
+            const statusIndicator = document.querySelector('.status-indicator');
+            const button = document.createElement('button');
+            button.textContent = 'Simulate Attack';
+            button.style.cssText = `
+                padding: 8px 16px;
+                background: rgba(255, 23, 68, 0.2);
+                border: 1px solid #ff1744;
+                color: #ff1744;
+                border-radius: 4px;
+                cursor: pointer;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                transition: all 0.3s ease;
+            `;
+            button.onmouseover = function() {
+                this.style.background = 'rgba(255, 23, 68, 0.3)';
+                this.style.boxShadow = '0 0 10px rgba(255, 23, 68, 0.5)';
+            };
+            button.onmouseout = function() {
+                this.style.background = 'rgba(255, 23, 68, 0.2)';
+                this.style.boxShadow = 'none';
+            };
+            button.onclick = function() {
+                const attacks = ['SQL_INJECTION', 'XSS', 'DDoS', 'BRUTE_FORCE', 'MALWARE', 'RECONNAISSANCE'];
+                const attack = attacks[Math.floor(Math.random() * attacks.length)];
+                fetch('/api/simulate/attack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ attack_type: attack })
+                }).catch(e => console.error('Simulate error:', e));
+            };
+            statusIndicator.parentElement.insertBefore(button, statusIndicator.nextSibling);
+        }
+    </script>
+</body>
+</html>

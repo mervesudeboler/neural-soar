@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov ruff
+
+      - name: Lint with ruff
+        run: |
+          ruff check . --select E,F,W --ignore E501 --exclude __pycache__
+
+      - name: Import smoke test
+        run: |
+          python -c "from brain.environment import SOAREnvironment; print('brain.environment OK')"
+          python -c "from brain.agent import SOARAgent; print('brain.agent OK')"
+          python -c "from hands.action_engine import ActionEngine; print('hands.action_engine OK')"
+          python -c "from hands.firewall import FirewallManager; print('hands.firewall OK')"
+          python -c "from hands.honeypot import HoneypotManager; print('hands.honeypot OK')"
+          python -c "from simulator.attack_profiles import AttackProfile; print('simulator OK')"
+          python -c "from core.event_bus import EventBus; print('core.event_bus OK')"
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: false

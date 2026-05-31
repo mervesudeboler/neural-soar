@@ -1,0 +1,57 @@
+# Neural SOAR Configuration File
+# AI-Powered Security Orchestration with Reinforcement Learning
+
+system:
+  mode: simulation  # simulation or production
+  log_level: DEBUG  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: logs/neural_soar.log
+
+redis:
+  host: localhost
+  port: 6379
+  password: null
+  db: 0
+
+sensors:
+  network_sensor:
+    enabled: true
+    suricata_log_path: /var/log/suricata/eve.json
+    simulation_interval_seconds: 5
+  
+  log_sensor:
+    enabled: true
+    auth_log_path: /var/log/auth.log
+    syslog_path: /var/log/syslog
+    simulation_interval_seconds: 10
+
+brain:
+  model_path: brain/models/neural_soar_agent.zip
+  algorithm: PPO  # Proximal Policy Optimization
+  policy: MlpPolicy
+  total_timesteps: 100000
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  net_arch:
+    - 256
+    - 256
+
+hands:
+  simulation_mode: true
+  default_block_duration_seconds: 3600
+  honeypot_enabled: true
+  container_isolation_enabled: true
+
+dashboard:
+  host: 0.0.0.0
+  port: 5000
+  debug: true
+  demo_mode: false
+  update_interval_seconds: 2
+
+metrics:
+  save_path: logs/metrics.json
+  export_interval_seconds: 60
